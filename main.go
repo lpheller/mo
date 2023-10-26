@@ -2,15 +2,23 @@ package main
 
 import (
 	// "fmt"
+
 	"log"
 	"os"
 
-	"mogo/commands"
+	"mo/commands"
+	"mo/config"
 
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
+	_, err := config.LoadConfig()
+
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
@@ -18,6 +26,12 @@ func main() {
 				Aliases: []string{"opendb"},
 				Usage:   "Open the database in the default editor",
 				Action:  commands.OpenDatabase,
+			},
+			{
+				Name:    "db:list",
+				Aliases: []string{"listdb"},
+				Usage:   "List all databases",
+				Action:  commands.ListDatabases,
 			},
 		},
 	}
