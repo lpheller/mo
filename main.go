@@ -33,6 +33,12 @@ func main() {
 				Usage:   "List all databases",
 				Action:  commands.ListDatabases,
 			},
+			{
+				Name: "env:sqlite",
+				// Aliases: []string{"envsqlite"},
+				Usage:  "Set the DB_CONNECTION to sqlite",
+				Action: commands.EnvSqlite,
+			},
 		},
 	}
 
