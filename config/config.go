@@ -7,58 +7,44 @@ import (
 )
 
 type Config struct {
-	DBUser     string `json:"DB_USERNAME"`
-	DbPassword string `json:"DB_PASSWORD"`
-	DbHost     string `json:"DB_HOST"`
-	DbPort     string `json:"DB_PORT"`
-	Editor     string `json:"EDITOR"`
-
+	DBUser           string `json:"DB_USERNAME"`
+	DbPassword       string `json:"DB_PASSWORD"`
+	DbHost           string `json:"DB_HOST"`
+	DbPort           string `json:"DB_PORT"`
+	Editor           string `json:"EDITOR"`
 	MailtrapUsername string `json:"MAILTRAP_USERNAME"`
 	MailtrapPassword string `json:"MAILTRAP_PASSWORD"`
 }
 
+// DefaultConfig creates a default configuration.
+func DefaultConfig() *Config {
+	return &Config{
+		DBUser:           "root",
+		DbPassword:       "",
+		DbHost:           "127.0.0.1",
+		DbPort:           "3306",
+		Editor:           "vscode",
+		MailtrapUsername: "",
+		MailtrapPassword: "",
+	}
+}
+
+// LoadConfig loads the configuration from a JSON file or creates it if it doesn't exist.
 func LoadConfig() (*Config, error) {
-	home, err := os.UserHomeDir()
+	configPath, err := ConfigPath()
 	if err != nil {
 		return nil, err
 	}
 
-	configPath := filepath.Join(home, ".config", "mortimer", "config.json")
-
 	_, err = os.Stat(configPath)
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(filepath.Dir(configPath), 0755)
+		err = createDefaultConfig(configPath)
 		if err != nil {
 			return nil, err
 		}
-
-		f, err := os.Create(configPath)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-
-		config := &Config{
-			DBUser:     "root",
-			DbPassword: "",
-			DbHost:     "127.0.0.1",
-			DbPort:     "3306",
-			Editor:     "vscode",
-
-			MailtrapUsername: "",
-			MailtrapPassword: "",
-		}
-
-		configBytes, err := json.MarshalIndent(config, "", "  ")
-		if err != nil {
-			return nil, err
-		}
-
-		f.Write(configBytes)
 	}
 
 	file, err := os.ReadFile(configPath)
-
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +58,34 @@ func LoadConfig() (*Config, error) {
 	return config, nil
 }
 
-
+// ConfigPath returns the path to the configuration file.
 func ConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
 
-	configPath := filepath.Join(home, ".config", "mortimer", "config.json")
+	return filepath.Join(home, ".config", "mortimer", "config.json"), nil
+}
 
-	return configPath, nil
+func createDefaultConfig(configPath string) error {
+	config := DefaultConfig()
+	configBytes, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(filepath.Dir(configPath), 0755)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(configPath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write(configBytes)
+	return err
 }
