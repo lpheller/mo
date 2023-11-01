@@ -1,8 +1,6 @@
 package main
 
 import (
-	// "fmt"
-
 	"log"
 	"os"
 
@@ -38,6 +36,25 @@ func main() {
 				// Aliases: []string{"envsqlite"},
 				Usage:  "Set the DB_CONNECTION to sqlite",
 				Action: commands.EnvSqlite,
+			},
+			{
+				Name: "env:mailtrap",
+				// Aliases: []string{"envmailtrap"},
+				Usage:  "Set the mail driver to mailtrap",
+				Action: commands.EnvMailtrap,
+			},
+			{
+				Name:    "config:edit",
+				Aliases: []string{"edit:config"},
+				Usage:   "Edit the Mortimer config file",
+				Action:  commands.EditConfig,
+			},
+			{
+				Name:        "env:sync",
+				Aliases:     []string{"snyc:env"},
+				Usage:       "Sync the .env file with .env.example",
+				Description: `Sync the .env file with .env.example`,
+				Action:      commands.SyncEnv,
 			},
 		},
 	}

@@ -71,3 +71,15 @@ func LoadConfig() (*Config, error) {
 
 	return config, nil
 }
+
+
+func ConfigPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	configPath := filepath.Join(home, ".config", "mortimer", "config.json")
+
+	return configPath, nil
+}
