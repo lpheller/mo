@@ -1,3 +1,3 @@
 # Mortimer CLI
 
-A personal helper CLI tool, with a bunch of commands to support me in my dev workflow.
+A personal helper CLI tool with a few commands that support me in my daily development workflow.
