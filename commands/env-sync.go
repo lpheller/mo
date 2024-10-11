@@ -16,6 +16,17 @@ import (
  * @return error
  */
 func SyncEnv(c *cli.Context) error {
+	// Check if .env.example exists; if not, create it
+	if _, err := os.Stat(".env.example"); os.IsNotExist(err) {
+		file, err := os.Create(".env.example")
+		if err != nil {
+			fmt.Println("Error creating .env.example:", err)
+			return nil
+		}
+		defer file.Close()
+		fmt.Println(".env.example file created.")
+	}
+
 	envVariables, err := getEnvVariablesFrom(".env")
 	if err != nil {
 		fmt.Println(err)
@@ -36,12 +47,10 @@ func SyncEnv(c *cli.Context) error {
 	}
 
 	file, err := os.OpenFile(".env.example", os.O_APPEND|os.O_WRONLY, 0644)
-
 	if err != nil {
 		fmt.Println(err)
 		return nil
 	}
-
 	defer file.Close()
 
 	if len(difference) == 0 {
@@ -50,7 +59,6 @@ func SyncEnv(c *cli.Context) error {
 	}
 
 	line := fmt.Sprintf("\n") // Add a newline before the variable
-
 	_, err = file.WriteString(line)
 	if err != nil {
 		fmt.Println(err)
@@ -67,13 +75,11 @@ func SyncEnv(c *cli.Context) error {
 	}
 
 	fmt.Println("Added missing Variables to .env.example:")
-
 	for _, variable := range difference {
 		fmt.Println(variable)
 	}
 
 	return nil
-
 }
 
 func contains(slice []string, s string) bool {
