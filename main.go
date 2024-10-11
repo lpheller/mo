@@ -44,6 +44,11 @@ func main() {
 				Action: commands.EnvMailtrap,
 			},
 			{
+				Name:   "env:maildev",
+				Usage:  "Set the mail driver to mail-dev",
+				Action: commands.EnvMailDev,
+			},
+			{
 				Name:    "config:edit",
 				Aliases: []string{"edit:config"},
 				Usage:   "Edit the Mortimer config file",
