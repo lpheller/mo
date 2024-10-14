@@ -122,6 +122,13 @@ func main() {
 				Aliases: []string{"cfg", "qc"},
 				Usage:   "Quickly open configuration files",
 				Action:  commands.QuickConfig,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "editor",
+						Usage:   "Specify a custom editor",
+						Aliases: []string{"e"},
+					},
+				},
 			},
 		},
 	}
