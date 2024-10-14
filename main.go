@@ -32,6 +32,12 @@ func main() {
 				Action:  commands.ListDatabases,
 			},
 			{
+				Name:    "db:create",
+				Aliases: []string{"createdb"},
+				Usage:   "Create a new database",
+				Action:  commands.CreateDatabase,
+			},
+			{
 				Name: "env:sqlite",
 				// Aliases: []string{"envsqlite"},
 				Usage:  "Set the DB_CONNECTION to sqlite",
