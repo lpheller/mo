@@ -2,10 +2,10 @@ package commands
 
 import (
 	"bufio"
+	"log"
+	"mo/config"
 	"os"
 	"strings"
-	"mo/config" 
-	"log"
 
 	"github.com/urfave/cli/v2"
 )

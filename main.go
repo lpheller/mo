@@ -20,6 +20,30 @@ func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
+				Name:  "db",
+				Usage: "Database management",
+				Subcommands: []*cli.Command{
+					{
+						Name:    "create",
+						Aliases: []string{"c"},
+						Usage:   "Create a new database",
+						Action:  commands.CreateDatabase,
+					},
+					{
+						Name:    "list",
+						Aliases: []string{"l"},
+						Usage:   "List all databases",
+						Action:  commands.ListDatabases,
+					},
+					{
+						Name:    "open",
+						Aliases: []string{"o"},
+						Usage:   "Open the database in the default editor",
+						Action:  commands.OpenDatabase,
+					},
+				},
+			},
+			{
 				Name:    "db:open",
 				Aliases: []string{"opendb"},
 				Usage:   "Open the database in the default editor",
@@ -36,6 +60,32 @@ func main() {
 				Aliases: []string{"createdb"},
 				Usage:   "Create a new database",
 				Action:  commands.CreateDatabase,
+			},
+			{
+				Name:  "env",
+				Usage: "Environment management",
+				Subcommands: []*cli.Command{
+					{
+						Name:   "sqlite",
+						Usage:  "Set the DB_CONNECTION to sqlite",
+						Action: commands.EnvSqlite,
+					},
+					{
+						Name:   "mailtrap",
+						Usage:  "Set the mail driver to mailtrap",
+						Action: commands.EnvMailtrap,
+					},
+					{
+						Name:   "maildev",
+						Usage:  "Set the mail driver to mail-dev",
+						Action: commands.EnvMailDev,
+					},
+					{
+						Name:   "sync",
+						Usage:  "Sync the .env file with .env.example",
+						Action: commands.SyncEnv,
+					},
+				},
 			},
 			{
 				Name: "env:sqlite",
@@ -66,6 +116,12 @@ func main() {
 				Usage:       "Sync the .env file with .env.example",
 				Description: `Sync the .env file with .env.example`,
 				Action:      commands.SyncEnv,
+			},
+			{
+				Name:    "config",
+				Aliases: []string{"cfg", "qc"},
+				Usage:   "Quickly open configuration files",
+				Action:  commands.QuickConfig,
 			},
 		},
 	}

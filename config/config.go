@@ -14,6 +14,7 @@ type Config struct {
 	Editor           string `json:"EDITOR"`
 	MailtrapUsername string `json:"MAILTRAP_USERNAME"`
 	MailtrapPassword string `json:"MAILTRAP_PASSWORD"`
+	ConfigPaths      map[string]string
 }
 
 // DefaultConfig creates a default configuration.
@@ -26,6 +27,7 @@ func DefaultConfig() *Config {
 		Editor:           "vscode",
 		MailtrapUsername: "",
 		MailtrapPassword: "",
+		ConfigPaths:      map[string]string{},
 	}
 }
 
