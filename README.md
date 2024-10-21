@@ -14,7 +14,7 @@ A personal helper CLI tool with a few commands that support me in my daily devel
    ```
 3. Build the project:
    ```sh
-   go build -o mycli main.go
+   go build -o mo main.go
    ```
 
 ## Usage
@@ -32,13 +32,10 @@ A personal helper CLI tool with a few commands that support me in my daily devel
 
 #### Environment Management
 
-- `env sqlite`: Set the DB_CONNECTION to sqlite
-- `env mailtrap`: Set the mail driver to mailtrap
-- `env maildev`: Set the mail driver to mail-dev
+- `env sqlite` (Alias: `env:sqlite`): Set the DB_CONNECTION to sqlite
+- `env mailtrap` (Alias: `env:mailtrap`): Set the mail driver to mailtrap
+- `env maildev` (Alias: `env:maildev`): Set the mail driver to mail-dev
 - `env sync` (Alias: `sync:env`): Sync the .env file with .env.example
-- `env:sqlite`: Set the DB_CONNECTION to sqlite
-- `env:mailtrap`: Set the mail driver to mailtrap
-- `env:maildev`: Set the mail driver to mail-dev
 
 #### Configuration
 
