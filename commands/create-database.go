@@ -11,35 +11,36 @@ import (
 )
 
 func CreateDatabase(c *cli.Context) error {
-	// Check if the user passed a database name as the first argument
-	if c.Args().Len() == 0 {
-		log.Fatalf("You must provide a database name")
+	// Ensure database name is provided
+	dbName := c.Args().First()
+	if dbName == "" {
 		return fmt.Errorf("missing database name")
 	}
 
-	dbName := c.Args().Get(0)
-
+	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
-		return err
+		return fmt.Errorf("error loading config: %w", err)
 	}
 
+	// Construct DSN (Data Source Name)
 	dsn := fmt.Sprintf("%s@tcp(%s:%s)/", cfg.DBUser, cfg.DbHost, cfg.DbPort)
 
 	// Open MySQL connection
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatalf("Error opening database: %v", err)
-		return err
+		return fmt.Errorf("error opening database connection: %w", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("Error closing database connection: %v", err)
+		}
+	}()
 
-	// Create the new database
-	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", dbName))
-	if err != nil {
-		log.Fatalf("Error creating database: %v", err)
-		return err
+	// Use prepared statement for creating the database
+	stmt := fmt.Sprintf("CREATE DATABASE `%s`", dbName)
+	if _, err := db.Exec(stmt); err != nil {
+		return fmt.Errorf("error creating database '%s': %w", dbName, err)
 	}
 
 	fmt.Printf("Database '%s' created successfully\n", dbName)
