@@ -11,16 +11,16 @@ import (
 )
 
 func QuickConfig(c *cli.Context) error {
+	// Load configuration file
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
+		log.Printf("Error loading config: %v", err)
 		return err
 	}
 
-	// Ensure a key is provided
+	// Ensure a config key argument is provided
 	if c.Args().Len() == 0 {
-		log.Fatalf("You must provide a config key (e.g., mortimer, nvim, git)")
-		return fmt.Errorf("missing config key")
+		return fmt.Errorf("missing config key: you must provide a config key (e.g., mortimer, nvim, git)")
 	}
 
 	key := c.Args().Get(0)
@@ -30,31 +30,21 @@ func QuickConfig(c *cli.Context) error {
 		return nil
 	}
 
-	// Choose the editor from the config (default to nvim if not specified)
+	// Use editor from config or override with --editor flag
 	editor := cfg.Editor
-	// Dump the --editor flag value
-	fmt.Printf("Flag --editor value: '%s'\n", c.String("editor"))
-
-	// If the --editor flag is provided, use it instead
 	if c.IsSet("editor") {
-		// Debugging: Print the flag value
-		fmt.Printf("Using editor from flag: %s\n", c.String("editor"))
 		editor = c.String("editor")
+		fmt.Printf("Using editor from flag: %s\n", editor)
 	} else {
-		// Debugging: Print which editor is being used
 		fmt.Printf("Using editor from config: %s\n", editor)
 	}
 
-	// output the editor
-	// fmt.Printf("Opening %s using %s\n", key, editor)
-
-	// Open the file with the specified editor
+	// Open the config file using the specified editor
 	cmd := exec.Command(editor, path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	if err != nil {
-		log.Fatalf("Error opening config file: %v", err)
+	if err := cmd.Run(); err != nil {
+		log.Printf("Error opening config file: %v", err)
 		return err
 	}
 
