@@ -6,11 +6,11 @@ A personal helper CLI tool with a few commands that support me in my daily devel
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/username/repo.git
+   git clone https://github.com/lpheller/mogo.git
    ```
 2. Navigate to the project directory:
    ```sh
-   cd repo
+   cd mogo
    ```
 3. Build the project:
    ```sh
