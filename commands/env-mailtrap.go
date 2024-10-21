@@ -2,7 +2,7 @@ package commands
 
 import (
 	"bufio"
-	"log"
+	"fmt"
 	"mo/config"
 	"os"
 	"strings"
@@ -11,67 +11,78 @@ import (
 )
 
 func EnvMailtrap(c *cli.Context) error {
-
+	// Load config
 	cfg, err := config.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %v", err)
+	}
 
 	mailtrapUsername := cfg.MailtrapUsername
 	mailtrapPassword := cfg.MailtrapPassword
 
 	if mailtrapUsername == "" || mailtrapPassword == "" {
-		log.Println("Your mailtrap credentials are missing. Please run \"mo config:edit\" to set them.")
-		return nil
+		return fmt.Errorf("your Mailtrap credentials are missing. Please run \"mo config:edit\" to set them")
 	}
 
+	// Open the .env file
 	file, err := os.Open(".env")
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to open .env file: %v", err)
 	}
 	defer file.Close()
 
+	// Create a map for the replacements
+	replacements := map[string]string{
+		"MAIL_MAILER=":       "MAIL_MAILER=smtp",
+		"MAIL_HOST=":         "MAIL_HOST=smtp.mailtrap.io",
+		"MAIL_PORT=":         "MAIL_PORT=2525",
+		"MAIL_USERNAME=":     "MAIL_USERNAME=" + mailtrapUsername,
+		"MAIL_PASSWORD=":     "MAIL_PASSWORD=" + mailtrapPassword,
+		"MAIL_ENCRYPTION=":   "MAIL_ENCRYPTION=tls",
+		"MAIL_FROM_ADDRESS=": "MAIL_FROM_ADDRESS=mail@project.test",
+	}
+
 	var lines []string
 	scanner := bufio.NewScanner(file)
+
+	// Read each line and apply necessary replacements
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		if strings.HasPrefix(line, "MAIL_MAILER=") {
-			line = "MAIL_MAILER=smtp"
-		} else if strings.HasPrefix(line, "MAIL_HOST=") {
-			line = "MAIL_HOST=smtp.mailtrap.io"
-		} else if strings.HasPrefix(line, "MAIL_PORT=") {
-			line = "MAIL_PORT=2525"
-		} else if strings.HasPrefix(line, "MAIL_USERNAME=") {
-			line = "MAIL_USERNAME=" + mailtrapUsername
-		} else if strings.HasPrefix(line, "MAIL_PASSWORD=") {
-			line = "MAIL_PASSWORD=" + mailtrapPassword
-		} else if strings.HasPrefix(line, "MAIL_ENCRYPTION=") {
-			line = "MAIL_ENCRYPTION=tls"
-		} else if strings.HasPrefix(line, "MAIL_FROM_ADDRESS=") {
-			line = "MAIL_FROM_ADDRESS=mail@project.test"
+		// Check if the line matches any key from the replacement map
+		for prefix, replacement := range replacements {
+			if strings.HasPrefix(line, prefix) {
+				line = replacement
+				break
+			}
 		}
 
 		lines = append(lines, line)
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("error reading .env file: %v", err)
 	}
 
+	// Re-open the .env file in write mode to save the updated lines
 	file, err = os.Create(".env")
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create .env file: %v", err)
 	}
 	defer file.Close()
 
 	w := bufio.NewWriter(file)
 	for _, line := range lines {
-		_, err := w.WriteString(line + "\n")
-		if err != nil {
-			log.Fatal(err)
+		if _, err := w.WriteString(line + "\n"); err != nil {
+			return fmt.Errorf("error writing to .env file: %v", err)
 		}
 	}
 
-	w.Flush()
+	// Ensure everything is written to disk
+	if err := w.Flush(); err != nil {
+		return fmt.Errorf("error flushing to .env file: %v", err)
+	}
 
+	fmt.Println(".env file updated with Mailtrap credentials.")
 	return nil
-
 }
