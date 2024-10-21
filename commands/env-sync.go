@@ -16,12 +16,10 @@ import (
  * @return error
  */
 func SyncEnv(c *cli.Context) error {
-	// Check if .env.example exists; if not, create it
 	if _, err := os.Stat(".env.example"); os.IsNotExist(err) {
 		file, err := os.Create(".env.example")
 		if err != nil {
-			fmt.Println("Error creating .env.example:", err)
-			return nil
+			return fmt.Errorf("error creating .env.example: %v", err)
 		}
 		defer file.Close()
 		fmt.Println(".env.example file created.")
@@ -29,17 +27,15 @@ func SyncEnv(c *cli.Context) error {
 
 	envVariables, err := getEnvVariablesFrom(".env")
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return fmt.Errorf("error reading .env: %v", err)
 	}
 
 	exampleVariables, err := getEnvVariablesFrom(".env.example")
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return fmt.Errorf("error reading .env.example: %v", err)
 	}
 
-	difference := []string{}
+	var difference []string
 	for _, variable := range envVariables {
 		if !contains(exampleVariables, variable) {
 			difference = append(difference, variable)
@@ -48,33 +44,27 @@ func SyncEnv(c *cli.Context) error {
 
 	file, err := os.OpenFile(".env.example", os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return fmt.Errorf("error opening .env.example: %v", err)
 	}
 	defer file.Close()
 
 	if len(difference) == 0 {
-		fmt.Println("No missing Variables found")
+		fmt.Println("No missing variables found")
 		return nil
 	}
 
-	line := fmt.Sprintf("\n") // Add a newline before the variable
-	_, err = file.WriteString(line)
-	if err != nil {
-		fmt.Println(err)
-		return nil
+	if _, err := file.WriteString("\n"); err != nil {
+		return fmt.Errorf("error writing newline to .env.example: %v", err)
 	}
 
 	for _, variable := range difference {
 		line := fmt.Sprintf("%s=\n", variable)
-		_, err := file.WriteString(line)
-		if err != nil {
-			fmt.Println(err)
-			return nil
+		if _, err := file.WriteString(line); err != nil {
+			return fmt.Errorf("error writing variable to .env.example: %v", err)
 		}
 	}
 
-	fmt.Println("Added missing Variables to .env.example:")
+	fmt.Println("Added missing variables to .env.example:")
 	for _, variable := range difference {
 		fmt.Println(variable)
 	}
