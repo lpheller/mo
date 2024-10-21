@@ -12,77 +12,99 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// CheckProject will check the current directory for composer.json, artisan, and package.json files, then run appropriate commands.
+// CheckProject checks the current directory for essential project files and runs necessary commands.
 func CheckProject(c *cli.Context) error {
-	// Check if composer.json exists
-	if _, err := os.Stat("composer.json"); err == nil {
+	if err := handleComposer(); err != nil {
+		return err
+	}
+
+	if err := handleLaravel(); err != nil {
+		return err
+	}
+
+	if err := handleNode(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// handleComposer checks for composer.json and runs composer install if it exists.
+func handleComposer() error {
+	if fileExists("composer.json") {
 		log.Println("composer.json found, running composer install...")
 		if err := runCommand("composer", "install"); err != nil {
-			return err
+			return fmt.Errorf("composer install failed: %w", err)
 		}
 	} else {
 		log.Println("composer.json not found")
 	}
+	return nil
+}
 
-	// Check if artisan exists (Laravel project)
-	if _, err := os.Stat("artisan"); err == nil {
-		log.Println("Laravel project detected...")
-
-		// Check for .env file and copy .env.example if needed
-		if err := ensureEnvFile(); err != nil {
-			return err
-		}
-
-		// Check if APP_KEY is already set in .env
-		hasAppKey, err := hasEnvAppKey()
-		if err != nil {
-			return err
-		}
-
-		// Run key:generate only if no APP_KEY is set
-		if !hasAppKey {
-			log.Println("No APP_KEY found, generating one...")
-			if err := runCommand("php", "artisan", "key:generate"); err != nil {
-				return err
-			}
-		} else {
-			log.Println("APP_KEY already exists, skipping key:generate")
-		}
-
-		// Run artisan migrate and db:seed
-		if err := runCommand("php", "artisan", "migrate"); err != nil {
-			return err
-		}
-		if err := runCommand("php", "artisan", "db:seed"); err != nil {
-			return err
-		}
-	} else {
+// handleLaravel checks if the artisan file exists, manages .env, and runs migrations/seeding.
+func handleLaravel() error {
+	if !fileExists("artisan") {
 		log.Println("artisan file not found")
+		return nil
 	}
 
-	// Check if package.json exists
-	if _, err := os.Stat("package.json"); err == nil {
-		log.Println("package.json found, running npm install...")
-		if err := runCommand("npm", "install"); err != nil {
-			return err
-		}
+	log.Println("Laravel project detected...")
 
-		// Check if build script exists in package.json
-		hasBuildScript, err := hasNpmScript("build")
-		if err != nil {
-			return err
-		}
+	// Ensure .env file exists
+	if err := ensureEnvFile(); err != nil {
+		return fmt.Errorf("error ensuring .env file: %w", err)
+	}
 
-		if hasBuildScript {
-			log.Println("Build script found, running npm run build...")
-			if err := runCommand("npm", "run", "build"); err != nil {
-				return err
-			}
-		} else {
-			log.Println("No build script found")
+	// Generate app key if not set
+	hasAppKey, err := hasEnvAppKey()
+	if err != nil {
+		return fmt.Errorf("error checking APP_KEY: %w", err)
+	}
+	if !hasAppKey {
+		log.Println("No APP_KEY found, generating one...")
+		if err := runCommand("php", "artisan", "key:generate"); err != nil {
+			return fmt.Errorf("key:generate failed: %w", err)
 		}
 	} else {
+		log.Println("APP_KEY already exists, skipping key:generate")
+	}
+
+	// Run artisan migrate and db:seed
+	if err := runCommand("php", "artisan", "migrate"); err != nil {
+		return fmt.Errorf("artisan migrate failed: %w", err)
+	}
+	if err := runCommand("php", "artisan", "db:seed"); err != nil {
+		return fmt.Errorf("artisan db:seed failed: %w", err)
+	}
+
+	return nil
+}
+
+// handleNode checks for package.json, runs npm install, and builds if a build script exists.
+func handleNode() error {
+	if !fileExists("package.json") {
 		log.Println("package.json not found")
+		return nil
+	}
+
+	log.Println("package.json found, running npm install...")
+	if err := runCommand("npm", "install"); err != nil {
+		return fmt.Errorf("npm install failed: %w", err)
+	}
+
+	// Run npm build if a build script exists
+	hasBuildScript, err := hasNpmScript("build")
+	if err != nil {
+		return fmt.Errorf("error checking build script: %w", err)
+	}
+	if hasBuildScript {
+		log.Println("Build script found, running npm run build...")
+		if err := runCommand("npm", "run", "build"); err != nil {
+			return fmt.Errorf("npm run build failed: %w", err)
+		}
+	} else {
+		log.Println("No build script found")
 	}
 
 	return nil
@@ -90,39 +112,43 @@ func CheckProject(c *cli.Context) error {
 
 // ensureEnvFile checks if .env exists, and if not, copies .env.example to .env
 func ensureEnvFile() error {
-	if _, err := os.Stat(".env"); os.IsNotExist(err) {
-		log.Println(".env file not found, copying from .env.example...")
-
-		if _, err := os.Stat(".env.example"); err == nil {
-			srcFile, err := os.Open(".env.example")
-			if err != nil {
-				return err
-			}
-			defer srcFile.Close()
-
-			destFile, err := os.Create(".env")
-			if err != nil {
-				return err
-			}
-			defer destFile.Close()
-
-			if _, err := io.Copy(destFile, srcFile); err != nil {
-				return err
-			}
-
-			log.Println(".env file created from .env.example")
-		} else {
-			log.Println(".env.example not found, cannot create .env")
-			return err
-		}
-	} else {
+	if fileExists(".env") {
 		log.Println(".env file exists")
+		return nil
 	}
 
+	log.Println(".env file not found, copying from .env.example...")
+	if !fileExists(".env.example") {
+		return fmt.Errorf(".env.example not found")
+	}
+
+	if err := copyFile(".env.example", ".env"); err != nil {
+		return fmt.Errorf("error copying .env.example to .env: %w", err)
+	}
+
+	log.Println(".env file created from .env.example")
 	return nil
 }
 
-// hasEnvAppKey checks if the APP_KEY is set in the .env file
+// copyFile copies the contents of src to dst
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, srcFile)
+	return err
+}
+
+// hasEnvAppKey checks if APP_KEY is set in the .env file
 func hasEnvAppKey() (bool, error) {
 	file, err := os.Open(".env")
 	if err != nil {
@@ -145,14 +171,6 @@ func hasEnvAppKey() (bool, error) {
 	return false, nil
 }
 
-// runCommand is a helper function to run system commands
-func runCommand(name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	// cmd.Stdout = os.Stdout
-	// cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
 // hasNpmScript checks if a given npm script exists in package.json
 func hasNpmScript(script string) (bool, error) {
 	file, err := os.Open("package.json")
@@ -163,12 +181,12 @@ func hasNpmScript(script string) (bool, error) {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		if strings.Contains(scanner.Text(), `"scripts": {`) {
+		line := scanner.Text()
+		if strings.Contains(line, `"scripts": {`) {
 			for scanner.Scan() {
 				if strings.Contains(scanner.Text(), fmt.Sprintf(`"%s":`, script)) {
 					return true, nil
 				}
-				// Stop when reaching the end of the scripts section
 				if strings.Contains(scanner.Text(), `},`) {
 					break
 				}
@@ -181,4 +199,18 @@ func hasNpmScript(script string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// fileExists is a utility function to check if a file exists
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}
+
+// runCommand is a helper function to run system commands
+func runCommand(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
