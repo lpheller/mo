@@ -130,6 +130,12 @@ func main() {
 					},
 				},
 			},
+			{
+				Name:    "setup",
+				Aliases: []string{"s"},
+				Usage:   "Setup a project by running appropriate commands",
+				Action:  commands.CheckProject,
+			},
 		},
 	}
 
