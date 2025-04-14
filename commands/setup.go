@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -205,12 +204,4 @@ func hasNpmScript(script string) (bool, error) {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
-}
-
-// runCommand is a helper function to run system commands
-func runCommand(name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
 }
