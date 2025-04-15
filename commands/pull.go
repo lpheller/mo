@@ -57,22 +57,22 @@ func pullStorage(env map[string]string) error {
     storageFile := fmt.Sprintf("storage_%s.tar.gz", strings.TrimSpace(string(dateOutput)))
     remoteCmd := fmt.Sprintf("cd %s && tar -cvzf /tmp/%s -C storage/app/public .", env["REMOTE_PROJECT_DIR"], storageFile)
 
-    if err := runRemoteCommand(env, remoteCmd); err != nil {
+    if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_IP"], remoteCmd); err != nil {
         return fmt.Errorf("error compressing storage folder on remote: %v", err)
     }
 
     localPath := fmt.Sprintf("/tmp/%s", storageFile)
     remotePath := fmt.Sprintf("%s@%s:/tmp/%s", env["REMOTE_SSH_USER"], env["REMOTE_IP"], storageFile)
 
-    if err := runCommand("scp", remotePath, localPath); err != nil {
+    if err := utils.RunCommand("scp", remotePath, localPath); err != nil {
         return fmt.Errorf("error downloading storage file: %v", err)
     }
 
-    if err := runCommand("tar", "-xzf", localPath, "-C", "storage/app/public"); err != nil {
+    if err := utils.RunCommand("tar", "-xzf", localPath, "-C", "storage/app/public"); err != nil {
         return fmt.Errorf("error extracting storage file locally: %v", err)
     }
 
-    if err := runRemoteCommand(env, fmt.Sprintf("rm /tmp/%s", storageFile)); err != nil {
+    if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_IP"], fmt.Sprintf("rm /tmp/%s", storageFile)); err != nil {
         return fmt.Errorf("error deleting remote storage file: %v", err)
     }
 
@@ -103,14 +103,14 @@ func pullDatabase(env map[string]string) error {
 
     fmt.Println("Remote command to create dump:", remoteCmd)
 
-    if err := runRemoteCommand(env, remoteCmd); err != nil {
+    if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_IP"], remoteCmd); err != nil {
         return fmt.Errorf("error creating database dump on remote: %v", err)
     }
 
     localPath := fmt.Sprintf("%s-dump.sql", remoteDBName)
     remotePath := fmt.Sprintf("%s@%s:%s", env["REMOTE_SSH_USER"], env["REMOTE_IP"], dumpFile)
 
-    if err := runCommand("scp", remotePath, localPath); err != nil {
+    if err := utils.RunCommand("scp", remotePath, localPath); err != nil {
         return fmt.Errorf("error downloading database dump: %v", err)
     }
     // fmt.Println("Local path for database dump:", localPathV)
@@ -141,11 +141,11 @@ func pullDatabase(env map[string]string) error {
     
     // Check if the local database exists
     if localDBPassword != "" {
-        if err := runCommand("mysql", "-u", localDBUser, "-p"+localDBPassword, "-e", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", localDBName)); err != nil {
+        if err := utils.RunCommand("mysql", "-u", localDBUser, "-p"+localDBPassword, "-e", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", localDBName)); err != nil {
             return fmt.Errorf("error creating local database: %v", err)
         }
     } else {
-        if err := runCommand("mysql", "-u", localDBUser, "-e", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", localDBName)); err != nil {
+        if err := utils.RunCommand("mysql", "-u", localDBUser, "-e", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", localDBName)); err != nil {
             return fmt.Errorf("error creating local database: %v", err)
         }
     }
@@ -160,7 +160,7 @@ func pullDatabase(env map[string]string) error {
         }
     }
 
-    if err := runRemoteCommand(env, fmt.Sprintf("rm %s", dumpFile)); err != nil {
+    if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_IP"], fmt.Sprintf("rm %s", dumpFile)); err != nil {
         return fmt.Errorf("error deleting remote database dump: %v", err)
     }
 
@@ -194,19 +194,6 @@ func pullDatabase(env map[string]string) error {
     return nil
 }
 
-func runRemoteCommand(env map[string]string, cmd string) error {
-    sshCmd := exec.Command("ssh", fmt.Sprintf("%s@%s", env["REMOTE_SSH_USER"], env["REMOTE_IP"]), cmd)
-    sshCmd.Stdout = os.Stdout
-    sshCmd.Stderr = os.Stderr
-    return sshCmd.Run()
-}
-
-func runCommand(name string, args ...string) error {
-    cmd := exec.Command(name, args...)
-    cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
-    return cmd.Run()
-}
 
 func getRemoteEnvValue(env map[string]string, remoteEnvPath, key string) string {
     cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", env["REMOTE_SSH_USER"], env["REMOTE_IP"]),

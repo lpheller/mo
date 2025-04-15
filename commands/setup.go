@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"mo/utils"
+
 	"github.com/urfave/cli/v2"
 )
 
@@ -32,7 +34,7 @@ func CheckProject(c *cli.Context) error {
 func handleComposer() error {
 	if fileExists("composer.json") {
 		log.Println("composer.json found, running composer install...")
-		if err := runCommand("composer", "install"); err != nil {
+		if err := utils.RunCommand("composer", "install"); err != nil {
 			return fmt.Errorf("composer install failed: %w", err)
 		}
 	} else {
@@ -62,7 +64,7 @@ func handleLaravel() error {
 	}
 	if !hasAppKey {
 		log.Println("No APP_KEY found, generating one...")
-		if err := runCommand("php", "artisan", "key:generate"); err != nil {
+		if err := utils.RunCommand("php", "artisan", "key:generate"); err != nil {
 			return fmt.Errorf("key:generate failed: %w", err)
 		}
 	} else {
@@ -70,10 +72,10 @@ func handleLaravel() error {
 	}
 
 	// Run artisan migrate and db:seed
-	if err := runCommand("php", "artisan", "migrate"); err != nil {
+	if err := utils.RunCommand("php", "artisan", "migrate"); err != nil {
 		return fmt.Errorf("artisan migrate failed: %w", err)
 	}
-	if err := runCommand("php", "artisan", "db:seed"); err != nil {
+	if err := utils.RunCommand("php", "artisan", "db:seed"); err != nil {
 		return fmt.Errorf("artisan db:seed failed: %w", err)
 	}
 
@@ -88,7 +90,7 @@ func handleNode() error {
 	}
 
 	log.Println("package.json found, running npm install...")
-	if err := runCommand("npm", "install"); err != nil {
+	if err := utils.RunCommand("npm", "install"); err != nil {
 		return fmt.Errorf("npm install failed: %w", err)
 	}
 
@@ -99,7 +101,7 @@ func handleNode() error {
 	}
 	if hasBuildScript {
 		log.Println("Build script found, running npm run build...")
-		if err := runCommand("npm", "run", "build"); err != nil {
+		if err := utils.RunCommand("npm", "run", "build"); err != nil {
 			return fmt.Errorf("npm run build failed: %w", err)
 		}
 	} else {
