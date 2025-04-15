@@ -2,7 +2,6 @@ package commands
 
 import (
     "fmt"
-    "log"
     "os"
     "os/exec"
     "strings"
@@ -89,12 +88,21 @@ func pullDatabase(env map[string]string) error {
 
     remoteEnvPath := fmt.Sprintf("%s/.env", env["REMOTE_PROJECT_DIR"])
     fmt.Println("Remote env path:", remoteEnvPath)
-    remoteDBName := getRemoteEnvValue(env, remoteEnvPath, "DB_DATABASE")
+    remoteDBName, err := getRemoteEnvValue(env, remoteEnvPath, "DB_DATABASE")
+    if err != nil {
+        return fmt.Errorf("error fetching remote DB name: %v", err)
+    }
     fmt.Println("Remote DB Name: %s\n", remoteDBName)
     
-    remoteDBUser := getRemoteEnvValue(env, remoteEnvPath, "DB_USERNAME")
+    remoteDBUser, err := getRemoteEnvValue(env, remoteEnvPath, "DB_USERNAME")
+    if err != nil {
+        return err
+    }
     fmt.Println("Remote DB User: %s\n", remoteDBUser)
-    remoteDBPassword := getRemoteEnvValue(env, remoteEnvPath, "DB_PASSWORD")
+    remoteDBPassword, err := getRemoteEnvValue(env, remoteEnvPath, "DB_PASSWORD")
+    if err != nil {
+        return err
+    }
     
 
 
@@ -140,24 +148,12 @@ func pullDatabase(env map[string]string) error {
     fmt.Println("Importing database dump locally...")
     
     // Check if the local database exists
-    if localDBPassword != "" {
-        if err := utils.RunCommand("mysql", "-u", localDBUser, "-p"+localDBPassword, "-e", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", localDBName)); err != nil {
-            return fmt.Errorf("error creating local database: %v", err)
-        }
-    } else {
-        if err := utils.RunCommand("mysql", "-u", localDBUser, "-e", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", localDBName)); err != nil {
-            return fmt.Errorf("error creating local database: %v", err)
-        }
+    if err := runMySQLCommand(localDBUser, localDBPassword, "", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", localDBName)); err != nil {
+        return fmt.Errorf("error creating local database: %v", err)
     }
 
-    if localDBPassword != "" {
-        if err := utils.RunCommand("mysql", "-u", localDBUser, "-p"+localDBPassword, localDBName, "-e", fmt.Sprintf("source %s", localPath)); err != nil {
-            return fmt.Errorf("error importing database dump locally: %v", err)
-        }
-    } else {
-        if err := utils.RunCommand("mysql", "-u", localDBUser, localDBName, "-e", fmt.Sprintf("source %s", localPath)); err != nil {
-            return fmt.Errorf("error importing database dump locally: %v", err)
-        }
+    if err := runMySQLCommand(localDBUser, localDBPassword, localDBName, fmt.Sprintf("source %s", localPath)); err != nil {
+        return fmt.Errorf("error importing database dump locally: %v", err)
     }
 
     if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_HOST"], fmt.Sprintf("rm %s", dumpFile)); err != nil {
@@ -194,18 +190,25 @@ func pullDatabase(env map[string]string) error {
     return nil
 }
 
+func runMySQLCommand(user, password, dbName, query string) error {
+    args := []string{"-u", user}
+    if password != "" {
+        args = append(args, "-p"+password)
+    }
+    if dbName != "" {
+        args = append(args, dbName)
+    }
+    args = append(args, "-e", query)
+    return utils.RunCommand("mysql", args...)
+}
 
-func getRemoteEnvValue(env map[string]string, remoteEnvPath, key string) string {
+func getRemoteEnvValue(env map[string]string, remoteEnvPath, key string) (string, error) {
     cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", env["REMOTE_SSH_USER"], env["REMOTE_HOST"]),
         fmt.Sprintf("grep %s %s | cut -d '=' -f 2", key, remoteEnvPath))
     output, err := cmd.Output()
     if err != nil {
-        log.Fatalf("error fetching remote env value for %s: %v", key, err)
+        return "", fmt.Errorf("error fetching remote env value for %s: %v", key, err)
     }
-    // if the value is wrapped in quotes, remove them
-    output = []byte(strings.Trim(strings.TrimSpace(string(output)), `'`))
-    // if the value is wrapped in double quotes, remove them
-    output = []byte(strings.Trim(strings.TrimSpace(string(output)), `"`))
-    
-    return strings.TrimSpace(string(output))
+    output = []byte(strings.Trim(strings.TrimSpace(string(output)), `"'`))
+    return strings.TrimSpace(string(output)), nil
 }
