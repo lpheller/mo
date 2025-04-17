@@ -10,9 +10,9 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func CreateDatabase(c *cli.Context) error {
+func CreateDatabase(cliContext *cli.Context) error {
 	// Ensure database name is provided
-	dbName := c.Args().First()
+	dbName := cliContext.Args().First()
 	if dbName == "" {
 		return fmt.Errorf("missing database name")
 	}

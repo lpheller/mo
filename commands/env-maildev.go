@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func EnvMailDev(c *cli.Context) error {
+func EnvMailDev(cliContext *cli.Context) error {
 
 	file, err := os.Open(".env")
 	if err != nil {
@@ -62,5 +62,4 @@ func EnvMailDev(c *cli.Context) error {
 	w.Flush()
 
 	return nil
-
 }

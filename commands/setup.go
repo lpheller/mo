@@ -14,7 +14,7 @@ import (
 )
 
 // CheckProject checks the current directory for essential project files and runs necessary commands.
-func CheckProject(c *cli.Context) error {
+func CheckProject(cliContext *cli.Context) error {
 	if err := handleComposer(); err != nil {
 		return err
 	}

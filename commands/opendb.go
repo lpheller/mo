@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func OpenDatabase(c *cli.Context) error {
+func OpenDatabase(cliContext *cli.Context) error {
 	// Check if .env file exists
 	_, err := os.Stat(".env")
 	if err != nil && !os.IsNotExist(err) {

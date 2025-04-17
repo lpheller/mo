@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func EnvMailtrap(c *cli.Context) error {
+func EnvMailtrap(cliContext *cli.Context) error {
 	// Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {

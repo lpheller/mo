@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func QuickConfig(c *cli.Context) error {
+func QuickConfig(cliContext *cli.Context) error {
 	// Load configuration file
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -19,11 +19,11 @@ func QuickConfig(c *cli.Context) error {
 	}
 
 	// Ensure a config key argument is provided
-	if c.Args().Len() == 0 {
+	if cliContext.Args().Len() == 0 {
 		return fmt.Errorf("missing config key: you must provide a config key (e.g., mortimer, nvim, git)")
 	}
 
-	key := c.Args().Get(0)
+	key := cliContext.Args().Get(0)
 	path, exists := cfg.ConfigPaths[key]
 	if !exists {
 		fmt.Printf("No config settings for '%s'\n", key)
@@ -32,8 +32,8 @@ func QuickConfig(c *cli.Context) error {
 
 	// Use editor from config or override with --editor flag
 	editor := cfg.Editor
-	if c.IsSet("editor") {
-		editor = c.String("editor")
+	if cliContext.IsSet("editor") {
+		editor = cliContext.String("editor")
 		fmt.Printf("Using editor from flag: %s\n", editor)
 	} else {
 		fmt.Printf("Using editor from config: %s\n", editor)

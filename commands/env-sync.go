@@ -12,10 +12,10 @@ import (
 /**
  * Sync between the .env.example and .env file
  *
- * @param c *cli.Context
+ * @param cliContext *cli.Context
  * @return error
  */
-func SyncEnv(c *cli.Context) error {
+func SyncEnv(cliContext *cli.Context) error {
 	if _, err := os.Stat(".env.example"); os.IsNotExist(err) {
 		file, err := os.Create(".env.example")
 		if err != nil {
