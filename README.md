@@ -1,4 +1,4 @@
-# Personal Helper CLI Tool
+# Mortimer - A Personal CLI Tool
 
 A personal helper CLI tool with a few commands that support me in my daily development workflow.
 
