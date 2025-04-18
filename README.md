@@ -47,3 +47,4 @@ A personal helper CLI tool with a few commands that support me in my daily devel
 #### Project Setup
 
 - `setup` (Alias: `s`): Setup a project by running appropriate commands
+- `pull`: Pull (and import) the Database and Storage folder from a remote project and copy to current project directory.
