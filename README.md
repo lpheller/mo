@@ -2,21 +2,6 @@
 
 A personal helper CLI tool with a few commands that support me in my daily development workflow.
 
-## Installation
-
-1. Clone the repository:
-   ```sh
-   git clone https://github.com/lpheller/mogo.git
-   ```
-2. Navigate to the project directory:
-   ```sh
-   cd mogo
-   ```
-3. Build the project:
-   ```sh
-   go build -o mo main.go
-   ```
-
 ## Usage
 
 ### Available Commands
