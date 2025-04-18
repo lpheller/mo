@@ -43,7 +43,21 @@ func Pull(cliContext *cli.Context) error {
 
 func loadLocalEnv() (map[string]string, error) {
 	requiredKeys := []string{"REMOTE_SSH_USER", "REMOTE_HOST", "REMOTE_PROJECT_DIR"}
-	return utils.LoadEnv(".env", requiredKeys)
+	envManager := utils.NewEnvManager(".env")
+
+	envVars := make(map[string]string)
+	for _, key := range requiredKeys {
+		value, found, err := envManager.GetVar(key)
+		if err != nil {
+			return nil, fmt.Errorf("error reading key %s from .env: %v", key, err)
+		}
+		if !found {
+			return nil, fmt.Errorf("required key %s not found in .env", key)
+		}
+		envVars[key] = value
+	}
+
+	return envVars, nil
 }
 
 func pullStorage(env map[string]string) error {
@@ -167,20 +181,18 @@ func pullDatabase(env map[string]string) error {
 	// if the local env file does not contain the database credentials, add them
 	if _, exists := localEnv["DB_DATABASE"]; !exists {
 		fmt.Println("Adding database credentials to local .env file...")
-		file, err := os.OpenFile(".env", os.O_APPEND|os.O_WRONLY, 0644)
-		if err != nil {
-			return fmt.Errorf("error opening .env file: %v", err)
+		envManager := utils.NewEnvManager(".env")
+
+		if err := envManager.SetVar("DB_DATABASE", localDBName); err != nil {
+			return fmt.Errorf("error adding DB_DATABASE to .env: %v", err)
 		}
-		defer file.Close()
-		if _, err := file.WriteString(fmt.Sprintf("DB_DATABASE=%s\n", localDBName)); err != nil {
-			return fmt.Errorf("error writing to .env file: %v", err)
+		if err := envManager.SetVar("DB_USERNAME", localDBUser); err != nil {
+			return fmt.Errorf("error adding DB_USERNAME to .env: %v", err)
 		}
-		if _, err := file.WriteString(fmt.Sprintf("DB_USERNAME=%s\n", localDBUser)); err != nil {
-			return fmt.Errorf("error writing to .env file: %v", err)
+		if err := envManager.SetVar("DB_PASSWORD", localDBPassword); err != nil {
+			return fmt.Errorf("error adding DB_PASSWORD to .env: %v", err)
 		}
-		if _, err := file.WriteString(fmt.Sprintf("DB_PASSWORD=%s\n", localDBPassword)); err != nil {
-			return fmt.Errorf("error writing to .env file: %v", err)
-		}
+
 		fmt.Println("Database credentials added to local .env file.")
 	} else {
 		fmt.Println("Database credentials already exist in local .env file.")

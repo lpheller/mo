@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"mo/utils"
+
 	"github.com/urfave/cli/v2"
 )
 
@@ -16,25 +18,31 @@ import (
  * @return error
  */
 func SyncEnv(cliContext *cli.Context) error {
+	// Create EnvManager instances for .env and .env.example
+	// envManager := utils.NewEnvManager(".env")
+	exampleManager := utils.NewEnvManager(".env.example")
+
+	// Ensure .env.example exists
 	if _, err := os.Stat(".env.example"); os.IsNotExist(err) {
-		file, err := os.Create(".env.example")
-		if err != nil {
+		if err := os.WriteFile(".env.example", []byte{}, 0644); err != nil {
 			return fmt.Errorf("error creating .env.example: %v", err)
 		}
-		defer file.Close()
 		fmt.Println(".env.example file created.")
 	}
 
+	// Get all variables from .env
 	envVariables, err := getEnvVariablesFrom(".env")
 	if err != nil {
 		return fmt.Errorf("error reading .env: %v", err)
 	}
 
+	// Get all variables from .env.example
 	exampleVariables, err := getEnvVariablesFrom(".env.example")
 	if err != nil {
 		return fmt.Errorf("error reading .env.example: %v", err)
 	}
 
+	// Find missing variables
 	var difference []string
 	for _, variable := range envVariables {
 		if !contains(exampleVariables, variable) {
@@ -42,31 +50,39 @@ func SyncEnv(cliContext *cli.Context) error {
 		}
 	}
 
-	file, err := os.OpenFile(".env.example", os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("error opening .env.example: %v", err)
-	}
-	defer file.Close()
-
-	if len(difference) == 0 {
-		fmt.Println("No missing variables found")
-		return nil
-	}
-
-	if _, err := file.WriteString("\n"); err != nil {
-		return fmt.Errorf("error writing newline to .env.example: %v", err)
-	}
-
-	for _, variable := range difference {
-		line := fmt.Sprintf("%s=\n", variable)
-		if _, err := file.WriteString(line); err != nil {
-			return fmt.Errorf("error writing variable to .env.example: %v", err)
+	// clear empty values from difference
+	for i := 0; i < len(difference); i++ {
+		if strings.TrimSpace(difference[i]) == "" {
+			difference = append(difference[:i], difference[i+1:]...)
+			i--
 		}
 	}
 
-	fmt.Println("Added missing variables to .env.example:")
+	// clear duplicates from difference
+	differenceMap := make(map[string]bool)
 	for _, variable := range difference {
-		fmt.Println(variable)
+		differenceMap[variable] = true
+	}
+	difference = []string{}
+	for variable := range differenceMap {
+		difference = append(difference, variable)
+	}
+
+	// Add missing variables to .env.example
+	for _, variable := range difference {
+		fmt.Printf("Adding %s to .env.example\n", variable)
+		if err := exampleManager.SetVar(variable, ""); err != nil {
+			return fmt.Errorf("error adding variable %s to .env.example: %v", variable, err)
+		}
+	}
+
+	if len(difference) == 0 {
+		fmt.Println("No missing variables found")
+	} else {
+		fmt.Println("Added missing variables to .env.example:")
+		for _, variable := range difference {
+			fmt.Println(variable)
+		}
 	}
 
 	return nil

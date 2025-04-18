@@ -1,65 +1,41 @@
 package commands
 
 import (
-	"bufio"
+	"fmt"
 	"log"
-	"os"
-	"strings"
+	"mo/utils"
 
 	"github.com/urfave/cli/v2"
 )
 
 func EnvMailDev(cliContext *cli.Context) error {
+	envManager := utils.NewEnvManager(".env")
 
-	file, err := os.Open(".env")
-	if err != nil {
+	// Set the required environment variables
+	if err := envManager.SetVar("MAIL_MAILER", "smtp"); err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if strings.HasPrefix(line, "MAIL_MAILER=") {
-			line = "MAIL_MAILER=smtp"
-		} else if strings.HasPrefix(line, "MAIL_HOST=") {
-			line = "MAIL_HOST=127.0.0.1"
-		} else if strings.HasPrefix(line, "MAIL_PORT=") {
-			line = "MAIL_PORT=2525"
-		} else if strings.HasPrefix(line, "MAIL_USERNAME=") {
-			line = "MAIL_USERNAME="
-		} else if strings.HasPrefix(line, "MAIL_PASSWORD=") {
-			line = "MAIL_PASSWORD="
-		} else if strings.HasPrefix(line, "MAIL_ENCRYPTION=") {
-			line = "MAIL_ENCRYPTION="
-		} else if strings.HasPrefix(line, "MAIL_FROM_ADDRESS=") {
-			line = "MAIL_FROM_ADDRESS="
-		}
-
-		lines = append(lines, line)
+	if err := envManager.SetVar("MAIL_HOST", "127.0.0.1"); err != nil {
+		log.Fatal(err)
 	}
-
-	if err := scanner.Err(); err != nil {
+	if err := envManager.SetVar("MAIL_PORT", "2525"); err != nil {
+		log.Fatal(err)
+	}
+	if err := envManager.SetVar("MAIL_USERNAME", ""); err != nil {
+		log.Fatal(err)
+	}
+	if err := envManager.SetVar("MAIL_PASSWORD", ""); err != nil {
+		log.Fatal(err)
+	}
+	if err := envManager.SetVar("MAIL_ENCRYPTION", ""); err != nil {
+		log.Fatal(err)
+	}
+	if err := envManager.SetVar("MAIL_FROM_ADDRESS", ""); err != nil {
 		log.Fatal(err)
 	}
 
-	file, err = os.Create(".env")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	w := bufio.NewWriter(file)
-	for _, line := range lines {
-		_, err := w.WriteString(line + "\n")
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	w.Flush()
+	// Inform the user that everything went smoothly
+	fmt.Println(".env file updated with MailDev settings.")
 
 	return nil
 }
