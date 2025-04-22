@@ -1,9 +1,13 @@
 package commands
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"mo/utils"
@@ -61,8 +65,9 @@ func pushStorage(env map[string]string) error {
 	}
 	storageFile := fmt.Sprintf("storage_%s.tar.gz", strings.TrimSpace(string(dateOutput)))
 
-	// Compress the local storage folder
-	if err := utils.RunCommand("tar", "--disable-copyfile", "-cvzf", storageFile, "-C", "storage/app/public", "."); err != nil {
+	// Compress the local storage folder using native Go
+	fmt.Println("Compressing local storage folder...")
+	if err := compressFolder("storage/app/public", storageFile); err != nil {
 		return fmt.Errorf("error compressing local storage folder: %v", err)
 	}
 
@@ -85,6 +90,78 @@ func pushStorage(env map[string]string) error {
 	}
 
 	fmt.Println("Storage folder successfully pushed!")
+	return nil
+}
+
+// compressFolder compresses a folder into a .tar.gz file using native Go libraries
+func compressFolder(sourceDir, outputFile string) error {
+	// Create the output file
+	outFile, err := os.Create(outputFile)
+	if err != nil {
+		return fmt.Errorf("error creating output file: %v", err)
+	}
+	defer outFile.Close()
+
+	// Create a gzip writer
+	gzipWriter := gzip.NewWriter(outFile)
+	defer gzipWriter.Close()
+
+	// Create a tar writer
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	// Walk through the source directory and add files to the tar archive
+	err = filepath.Walk(sourceDir, func(file string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("error walking through file: %v", err)
+		}
+
+		// Skip unwanted files like .DS_Store
+		if fi.Name() == ".DS_Store" {
+			return nil
+		}
+
+		// Get the relative path to maintain folder structure
+		relPath := strings.TrimPrefix(file, sourceDir)
+		relPath = strings.TrimPrefix(relPath, string(filepath.Separator))
+
+		// Ensure the relative path is not empty
+		if relPath == "" {
+			relPath = "."
+		}
+
+		// Create a tar header for the file
+		header, err := tar.FileInfoHeader(fi, fi.Name())
+		if err != nil {
+			return fmt.Errorf("error creating tar header: %v", err)
+		}
+		header.Name = relPath
+
+		// Write the header to the tar archive
+		if err := tarWriter.WriteHeader(header); err != nil {
+			return fmt.Errorf("error writing tar header: %v", err)
+		}
+
+		// If the file is not a directory, write its content to the tar archive
+		if !fi.IsDir() {
+			fileContent, err := os.Open(file)
+			if err != nil {
+				return fmt.Errorf("error opening file: %v", err)
+			}
+			defer fileContent.Close()
+
+			if _, err := io.Copy(tarWriter, fileContent); err != nil {
+				return fmt.Errorf("error writing file content to tar archive: %v", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("error compressing folder: %v", err)
+	}
+
 	return nil
 }
 
