@@ -18,20 +18,17 @@ func Pull(cliContext *cli.Context) error {
 		return err
 	}
 
-	// if no flags are set, print usage and return
 	if !cliContext.Bool("storage") && !cliContext.Bool("database") {
 		fmt.Println("No flags set. Use --storage or --database to pull data.")
 		return nil
 	}
 
-	// Check if the --storage flag is set, and pull the storage folder if true.
 	if cliContext.Bool("storage") {
 		if err := pullStorage(localEnv); err != nil {
 			return err
 		}
 	}
 
-	// Check if the --database flag is set, and pull the database if true.
 	if cliContext.Bool("database") {
 		if err := pullDatabase(localEnv); err != nil {
 			return err
@@ -114,30 +111,26 @@ func pullDatabase(env map[string]string) error {
 	if err := utils.RunCommand("scp", remotePath, localPath); err != nil {
 		return fmt.Errorf("error downloading database dump: %v", err)
 	}
-	// fmt.Println("Local path for database dump:", localPathV)
-	// fmt.Println("Remote path for database dump:", remotePath)
 
 	localEnv, err := utils.EnsureRequiredEnvVars("pull")
 	if err != nil {
 		return err
 	}
 
-	// Laden der Konfiguration
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
-	localDBName := localEnv["DB_DATABASE"] // Beibehalten, da der DB-Name aus der .env-Datei kommt
+	localDBName := localEnv["DB_DATABASE"]
 	if localDBName == "" {
-		localDBName = remoteDBName // Use the same name as remote if not set
+		localDBName = remoteDBName
 	}
-	localDBUser := cfg.DBUser         // Benutzername aus der Konfiguration
-	localDBPassword := cfg.DbPassword // Passwort aus der Konfiguration
+	localDBUser := cfg.DBUser
+	localDBPassword := cfg.DbPassword
 
 	fmt.Println("Importing database dump locally...")
 
-	// Check if the local database exists
 	if err := runMySQLCommand(localDBUser, localDBPassword, "", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", localDBName)); err != nil {
 		return fmt.Errorf("error creating local database: %v", err)
 	}
@@ -156,7 +149,6 @@ func pullDatabase(env map[string]string) error {
 
 	fmt.Println("Database successfully pulled!")
 
-	// if the local env file does not contain the database credentials, add them
 	if _, exists := localEnv["DB_DATABASE"]; !exists {
 		fmt.Println("Adding database credentials to local .env file...")
 		envManager := utils.NewEnvManager(".env")
@@ -193,7 +185,6 @@ func runMySQLCommand(user, password, dbName, query string) error {
 func getRemoteEnvValue(env map[string]string, remoteEnvPath, key, context string) (string, error) {
 	var sshUserKey, sshHostKey string
 
-	// Wähle die richtigen Variablen basierend auf dem Kontext
 	if context == "push" {
 		sshUserKey = "PUSH_SSH_USER"
 		sshHostKey = "PUSH_HOST"
@@ -204,7 +195,6 @@ func getRemoteEnvValue(env map[string]string, remoteEnvPath, key, context string
 		return "", fmt.Errorf("invalid context: %s", context)
 	}
 
-	// Führe den SSH-Befehl aus, um den Wert aus der Remote-Umgebung zu holen
 	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", env[sshUserKey], env[sshHostKey]),
 		fmt.Sprintf("grep %s %s | cut -d '=' -f 2", key, remoteEnvPath))
 	output, err := cmd.Output()

@@ -11,18 +11,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-/**
- * Sync between the .env.example and .env file
- *
- * @param cliContext *cli.Context
- * @return error
- */
 func SyncEnv(cliContext *cli.Context) error {
-	// Create EnvManager instances for .env and .env.example
 	// envManager := utils.NewEnvManager(".env")
 	exampleManager := utils.NewEnvManager(".env.example")
 
-	// Ensure .env.example exists
 	if _, err := os.Stat(".env.example"); os.IsNotExist(err) {
 		if err := os.WriteFile(".env.example", []byte{}, 0644); err != nil {
 			return fmt.Errorf("error creating .env.example: %v", err)
@@ -30,19 +22,16 @@ func SyncEnv(cliContext *cli.Context) error {
 		fmt.Println(".env.example file created.")
 	}
 
-	// Get all variables from .env
 	envVariables, err := getEnvVariablesFrom(".env")
 	if err != nil {
 		return fmt.Errorf("error reading .env: %v", err)
 	}
 
-	// Get all variables from .env.example
 	exampleVariables, err := getEnvVariablesFrom(".env.example")
 	if err != nil {
 		return fmt.Errorf("error reading .env.example: %v", err)
 	}
 
-	// Find missing variables
 	var difference []string
 	for _, variable := range envVariables {
 		if !contains(exampleVariables, variable) {
@@ -50,7 +39,6 @@ func SyncEnv(cliContext *cli.Context) error {
 		}
 	}
 
-	// clear empty values from difference
 	for i := 0; i < len(difference); i++ {
 		if strings.TrimSpace(difference[i]) == "" {
 			difference = append(difference[:i], difference[i+1:]...)
@@ -58,7 +46,6 @@ func SyncEnv(cliContext *cli.Context) error {
 		}
 	}
 
-	// clear duplicates from difference
 	differenceMap := make(map[string]bool)
 	for _, variable := range difference {
 		differenceMap[variable] = true
@@ -68,7 +55,6 @@ func SyncEnv(cliContext *cli.Context) error {
 		difference = append(difference, variable)
 	}
 
-	// Add missing variables to .env.example
 	for _, variable := range difference {
 		fmt.Printf("Adding %s to .env.example\n", variable)
 		if err := exampleManager.SetVar(variable, ""); err != nil {

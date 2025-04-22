@@ -11,7 +11,6 @@ import (
 func EnvMailDev(cliContext *cli.Context) error {
 	envManager := utils.NewEnvManager(".env")
 
-	// Set the required environment variables
 	if err := envManager.SetVar("MAIL_MAILER", "smtp"); err != nil {
 		log.Fatal(err)
 	}
@@ -34,7 +33,6 @@ func EnvMailDev(cliContext *cli.Context) error {
 		log.Fatal(err)
 	}
 
-	// Inform the user that everything went smoothly
 	fmt.Println(".env file updated with MailDev settings.")
 
 	return nil

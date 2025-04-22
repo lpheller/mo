@@ -10,7 +10,6 @@ import (
 )
 
 func OpenDatabase(cliContext *cli.Context) error {
-	// Check if .env file exists
 	_, err := os.Stat(".env")
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -19,17 +18,14 @@ func OpenDatabase(cliContext *cli.Context) error {
 	envExists := !os.IsNotExist(err)
 
 	if !envExists {
-		// Handle case when .env doesn't exist
 		return fmt.Errorf(".env file not found")
 	}
 
-	// Read the .env file to check for SQLite or load environment variables
 	envContent, err := os.ReadFile(".env")
 	if err != nil {
 		return err
 	}
 
-	// Check for SQLite database
 	if strings.Contains(string(envContent), "DB_CONNECTION=sqlite") {
 		if _, err := os.Stat("database/database.sqlite"); !os.IsNotExist(err) {
 			return exec.Command("open", "database/database.sqlite").Run()
@@ -68,6 +64,5 @@ func OpenDatabase(cliContext *cli.Context) error {
 
 	connStr := fmt.Sprintf("%s://%s:%s@%s:%s/%s", dbConnection, dbUsername, dbPassword, dbHost, dbPort, dbDatabase)
 
-	// Open the database
 	return exec.Command("open", connStr).Run()
 }

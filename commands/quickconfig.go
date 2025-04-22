@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 	"log"
-	"mo/config" // Adjust import path if necessary
+	"mo/config"
 	"os"
 	"os/exec"
 

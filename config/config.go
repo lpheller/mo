@@ -17,7 +17,6 @@ type Config struct {
 	ConfigPaths      map[string]string
 }
 
-// DefaultConfig creates a default configuration.
 func DefaultConfig() *Config {
 	return &Config{
 		DBUser:           "root",
@@ -31,7 +30,6 @@ func DefaultConfig() *Config {
 	}
 }
 
-// LoadConfig loads the configuration from a JSON file or creates it if it doesn't exist.
 func LoadConfig() (*Config, error) {
 	configPath, err := ConfigPath()
 	if err != nil {
@@ -60,7 +58,6 @@ func LoadConfig() (*Config, error) {
 	return config, nil
 }
 
-// ConfigPath returns the path to the configuration file.
 func ConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {

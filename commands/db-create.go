@@ -11,22 +11,18 @@ import (
 )
 
 func CreateDatabase(cliContext *cli.Context) error {
-	// Ensure database name is provided
 	dbName := cliContext.Args().First()
 	if dbName == "" {
 		return fmt.Errorf("missing database name")
 	}
 
-	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
-	// Construct DSN (Data Source Name)
 	dsn := fmt.Sprintf("%s@tcp(%s:%s)/", cfg.DBUser, cfg.DbHost, cfg.DbPort)
 
-	// Open MySQL connection
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return fmt.Errorf("error opening database connection: %w", err)
@@ -37,7 +33,6 @@ func CreateDatabase(cliContext *cli.Context) error {
 		}
 	}()
 
-	// Use prepared statement for creating the database
 	stmt := fmt.Sprintf("CREATE DATABASE `%s`", dbName)
 	if _, err := db.Exec(stmt); err != nil {
 		return fmt.Errorf("error creating database '%s': %w", dbName, err)

@@ -10,12 +10,10 @@ type EnvManager struct {
 	Path string
 }
 
-// New creates a new instance with the given .env file path
 func NewEnvManager(path string) *EnvManager {
 	return &EnvManager{Path: path}
 }
 
-// GetVar returns the value of a given variable, and a boolean indicating if it was found
 func (e *EnvManager) GetVar(key string) (string, bool, error) {
 	data, err := os.ReadFile(e.Path)
 	if err != nil {
@@ -40,7 +38,6 @@ func (e *EnvManager) SetVar(key, value string) error {
 	data, err := os.ReadFile(e.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// File doesn't exist — create it with the variable
 			line := fmt.Sprintf("%s=%s\n", key, value)
 			return os.WriteFile(e.Path, []byte(line), 0644)
 		}
@@ -55,7 +52,6 @@ func (e *EnvManager) SetVar(key, value string) error {
 			continue
 		}
 
-		// Check both commented and uncommented lines
 		isCommented := strings.HasPrefix(trimmed, "#")
 		content := trimmed
 		if isCommented {

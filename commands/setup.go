@@ -13,7 +13,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// CheckProject checks the current directory for essential project files and runs necessary commands.
 func CheckProject(cliContext *cli.Context) error {
 	if err := handleComposer(); err != nil {
 		return err
@@ -30,7 +29,6 @@ func CheckProject(cliContext *cli.Context) error {
 	return nil
 }
 
-// handleComposer checks for composer.json and runs composer install if it exists.
 func handleComposer() error {
 	if fileExists("composer.json") {
 		log.Println("composer.json found, running composer install...")
@@ -43,7 +41,6 @@ func handleComposer() error {
 	return nil
 }
 
-// handleLaravel checks if the artisan file exists, manages .env, and runs migrations/seeding.
 func handleLaravel() error {
 	if !fileExists("artisan") {
 		log.Println("artisan file not found")
@@ -52,12 +49,10 @@ func handleLaravel() error {
 
 	log.Println("Laravel project detected...")
 
-	// Ensure .env file exists
 	if err := ensureEnvFile(); err != nil {
 		return fmt.Errorf("error ensuring .env file: %w", err)
 	}
 
-	// Generate app key if not set
 	hasAppKey, err := hasEnvAppKey()
 	if err != nil {
 		return fmt.Errorf("error checking APP_KEY: %w", err)
@@ -71,7 +66,6 @@ func handleLaravel() error {
 		log.Println("APP_KEY already exists, skipping key:generate")
 	}
 
-	// Run artisan migrate and db:seed
 	if err := utils.RunCommand("php", "artisan", "migrate"); err != nil {
 		return fmt.Errorf("artisan migrate failed: %w", err)
 	}
@@ -82,7 +76,6 @@ func handleLaravel() error {
 	return nil
 }
 
-// handleNode checks for package.json, runs npm install, and builds if a build script exists.
 func handleNode() error {
 	if !fileExists("package.json") {
 		log.Println("package.json not found")
@@ -94,7 +87,6 @@ func handleNode() error {
 		return fmt.Errorf("npm install failed: %w", err)
 	}
 
-	// Run npm build if a build script exists
 	hasBuildScript, err := hasNpmScript("build")
 	if err != nil {
 		return fmt.Errorf("error checking build script: %w", err)
@@ -111,7 +103,6 @@ func handleNode() error {
 	return nil
 }
 
-// ensureEnvFile checks if .env exists, and if not, copies .env.example to .env
 func ensureEnvFile() error {
 	if fileExists(".env") {
 		log.Println(".env file exists")
@@ -131,7 +122,6 @@ func ensureEnvFile() error {
 	return nil
 }
 
-// copyFile copies the contents of src to dst
 func copyFile(src, dst string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
@@ -149,7 +139,6 @@ func copyFile(src, dst string) error {
 	return err
 }
 
-// hasEnvAppKey checks if APP_KEY is set in the .env file
 func hasEnvAppKey() (bool, error) {
 	file, err := os.Open(".env")
 	if err != nil {
@@ -172,7 +161,6 @@ func hasEnvAppKey() (bool, error) {
 	return false, nil
 }
 
-// hasNpmScript checks if a given npm script exists in package.json
 func hasNpmScript(script string) (bool, error) {
 	file, err := os.Open("package.json")
 	if err != nil {
@@ -202,7 +190,6 @@ func hasNpmScript(script string) (bool, error) {
 	return false, nil
 }
 
-// fileExists is a utility function to check if a file exists
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
