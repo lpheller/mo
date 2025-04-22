@@ -117,18 +117,18 @@ func pullDatabase(env map[string]string) error {
 
 	remoteEnvPath := fmt.Sprintf("%s/.env", env["PULL_PROJECT_DIR"])
 	fmt.Println("Remote env path:", remoteEnvPath)
-	remoteDBName, err := getRemoteEnvValue(env, remoteEnvPath, "DB_DATABASE")
+	remoteDBName, err := getRemoteEnvValue(env, remoteEnvPath, "DB_DATABASE", "pull")
 	if err != nil {
 		return fmt.Errorf("error fetching remote DB name: %v", err)
 	}
 	fmt.Println("Remote DB Name: %s\n", remoteDBName)
 
-	remoteDBUser, err := getRemoteEnvValue(env, remoteEnvPath, "DB_USERNAME")
+	remoteDBUser, err := getRemoteEnvValue(env, remoteEnvPath, "DB_USERNAME", "pull")
 	if err != nil {
 		return err
 	}
 	fmt.Println("Remote DB User: %s\n", remoteDBUser)
-	remoteDBPassword, err := getRemoteEnvValue(env, remoteEnvPath, "DB_PASSWORD")
+	remoteDBPassword, err := getRemoteEnvValue(env, remoteEnvPath, "DB_PASSWORD", "pull")
 	if err != nil {
 		return err
 	}
@@ -227,8 +227,22 @@ func runMySQLCommand(user, password, dbName, query string) error {
 	return utils.RunCommand("mysql", args...)
 }
 
-func getRemoteEnvValue(env map[string]string, remoteEnvPath, key string) (string, error) {
-	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", env["PULL_SSH_USER"], env["PULL_HOST"]),
+func getRemoteEnvValue(env map[string]string, remoteEnvPath, key, context string) (string, error) {
+	var sshUserKey, sshHostKey string
+
+	// Wähle die richtigen Variablen basierend auf dem Kontext
+	if context == "push" {
+		sshUserKey = "PUSH_SSH_USER"
+		sshHostKey = "PUSH_HOST"
+	} else if context == "pull" {
+		sshUserKey = "PULL_SSH_USER"
+		sshHostKey = "PULL_HOST"
+	} else {
+		return "", fmt.Errorf("invalid context: %s", context)
+	}
+
+	// Führe den SSH-Befehl aus, um den Wert aus der Remote-Umgebung zu holen
+	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", env[sshUserKey], env[sshHostKey]),
 		fmt.Sprintf("grep %s %s | cut -d '=' -f 2", key, remoteEnvPath))
 	output, err := cmd.Output()
 	if err != nil {

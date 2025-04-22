@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,8 +23,9 @@ func Push(cliContext *cli.Context) error {
 	}
 
 	// Check if the remote environment is staging
-	remoteEnvPath := fmt.Sprintf("%s/.env", localEnv["REMOTE_PROJECT_DIR"])
-	remoteAppEnv, err := getRemoteEnvValue(localEnv, remoteEnvPath, "APP_ENV")
+	remoteEnvPath := fmt.Sprintf("%s/.env", localEnv["PUSH_PROJECT_DIR"])
+	log.Printf("Remote environment path: %s", remoteEnvPath)
+	remoteAppEnv, err := getRemoteEnvValue(localEnv, remoteEnvPath, "APP_ENV", "push")
 	if err != nil {
 		return fmt.Errorf("error fetching remote APP_ENV: %v", err)
 	}
@@ -72,15 +74,15 @@ func pushStorage(env map[string]string) error {
 	}
 
 	localPath := storageFile
-	remotePath := fmt.Sprintf("%s@%s:/tmp/%s", env["REMOTE_SSH_USER"], env["REMOTE_HOST"], storageFile)
+	remotePath := fmt.Sprintf("%s@%s:/tmp/%s", env["PUSH_SSH_USER"], env["PUSH_HOST"], storageFile)
 
 	// Upload the compressed file to the remote server
 	if err := utils.RunCommand("scp", localPath, remotePath); err != nil {
 		return fmt.Errorf("error uploading storage file: %v", err)
 	}
 
-	remoteCmd := fmt.Sprintf("cd %s/storage/app/public && tar -xzf /tmp/%s && rm /tmp/%s", env["REMOTE_PROJECT_DIR"], storageFile, storageFile)
-	if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_HOST"], remoteCmd); err != nil {
+	remoteCmd := fmt.Sprintf("cd %s/storage/app/public && tar -xzf /tmp/%s && rm /tmp/%s", env["PUSH_PROJECT_DIR"], storageFile, storageFile)
+	if err := utils.RunRemoteCommand(env["PUSH_SSH_USER"], env["PUSH_HOST"], remoteCmd); err != nil {
 		return fmt.Errorf("error extracting storage file on remote: %v", err)
 	}
 
@@ -168,14 +170,9 @@ func compressFolder(sourceDir, outputFile string) error {
 func pushDatabase(env map[string]string) error {
 	fmt.Println("Pushing database...")
 
-	localEnv, err := loadLocalEnv("push")
-	if err != nil {
-		return err
-	}
-
-	localDBName := localEnv["DB_DATABASE"]
-	localDBUser := localEnv["DB_USERNAME"]
-	localDBPassword := localEnv["DB_PASSWORD"]
+	localDBName := env["DB_DATABASE"]
+	localDBUser := env["DB_USERNAME"]
+	localDBPassword := env["DB_PASSWORD"]
 
 	if localDBName == "" || localDBUser == "" || localDBPassword == "" {
 		return fmt.Errorf("local database credentials are missing in .env file")
@@ -189,29 +186,29 @@ func pushDatabase(env map[string]string) error {
 		return fmt.Errorf("error creating local database dump: %v", err)
 	}
 
-	remotePath := fmt.Sprintf("%s@%s:/tmp/%s", env["REMOTE_SSH_USER"], env["REMOTE_HOST"], dumpFile)
+	remotePath := fmt.Sprintf("%s@%s:/tmp/%s", env["PUSH_SSH_USER"], env["PUSH_HOST"], dumpFile)
 
 	// Upload the dump file to the remote server
 	if err := utils.RunCommand("scp", dumpFile, remotePath); err != nil {
 		return fmt.Errorf("error uploading database dump: %v", err)
 	}
 
-	remoteDBName, err := getRemoteEnvValue(env, fmt.Sprintf("%s/.env", env["REMOTE_PROJECT_DIR"]), "DB_DATABASE")
+	remoteDBName, err := getRemoteEnvValue(env, fmt.Sprintf("%s/.env", env["PUSH_PROJECT_DIR"]), "DB_DATABASE", "push")
 	if err != nil {
 		return fmt.Errorf("error fetching remote DB name: %v", err)
 	}
-	remoteDBUser, err := getRemoteEnvValue(env, fmt.Sprintf("%s/.env", env["REMOTE_PROJECT_DIR"]), "DB_USERNAME")
+	remoteDBUser, err := getRemoteEnvValue(env, fmt.Sprintf("%s/.env", env["PUSH_PROJECT_DIR"]), "DB_USERNAME", "push")
 	if err != nil {
 		return fmt.Errorf("error fetching remote DB user: %v", err)
 	}
-	remoteDBPassword, err := getRemoteEnvValue(env, fmt.Sprintf("%s/.env", env["REMOTE_PROJECT_DIR"]), "DB_PASSWORD")
+	remoteDBPassword, err := getRemoteEnvValue(env, fmt.Sprintf("%s/.env", env["PUSH_PROJECT_DIR"]), "DB_PASSWORD", "push")
 	if err != nil {
 		return fmt.Errorf("error fetching remote DB password: %v", err)
 	}
 
 	// Import the dump file into the remote database
 	remoteCmd := fmt.Sprintf("mysql -u %s -p%s %s < /tmp/%s && rm /tmp/%s", remoteDBUser, remoteDBPassword, remoteDBName, dumpFile, dumpFile)
-	if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_HOST"], remoteCmd); err != nil {
+	if err := utils.RunRemoteCommand(env["PUSH_SSH_USER"], env["PUSH_HOST"], remoteCmd); err != nil {
 		return fmt.Errorf("error importing database dump on remote: %v", err)
 	}
 
