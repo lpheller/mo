@@ -16,7 +16,7 @@ import (
 )
 
 func Push(cliContext *cli.Context) error {
-	localEnv, err := loadLocalEnv()
+	localEnv, err := loadLocalEnv("push")
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func compressFolder(sourceDir, outputFile string) error {
 func pushDatabase(env map[string]string) error {
 	fmt.Println("Pushing database...")
 
-	localEnv, err := loadLocalEnv()
+	localEnv, err := loadLocalEnv("push")
 	if err != nil {
 		return err
 	}

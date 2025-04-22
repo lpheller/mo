@@ -13,7 +13,7 @@ import (
 )
 
 func Pull(cliContext *cli.Context) error {
-	localEnv, err := loadLocalEnv()
+	localEnv, err := loadLocalEnv("pull")
 	if err != nil {
 		return err
 	}
@@ -41,23 +41,30 @@ func Pull(cliContext *cli.Context) error {
 	return nil
 }
 
-func loadLocalEnv() (map[string]string, error) {
-	requiredKeys := []string{"REMOTE_SSH_USER", "REMOTE_HOST", "REMOTE_PROJECT_DIR"}
-	envManager := utils.NewEnvManager(".env")
+func loadLocalEnv(context string) (map[string]string, error) {
+	var requiredKeys []string
 
+	if context == "push" {
+		requiredKeys = []string{"PUSH_SSH_USER", "PUSH_HOST", "PUSH_PROJECT_DIR"}
+	} else if context == "pull" {
+		requiredKeys = []string{"PULL_SSH_USER", "PULL_HOST", "PULL_PROJECT_DIR"}
+	} else {
+		return nil, fmt.Errorf("invalid context: %s", context)
+	}
+
+	envManager := utils.NewEnvManager(".env")
 	envVars := make(map[string]string)
+
 	for _, key := range requiredKeys {
 		value, found, err := envManager.GetVar(key)
 		if err != nil {
 			return nil, fmt.Errorf("error reading key %s from .env: %v", key, err)
 		}
 		if !found {
-			// Prompt the user for the missing variable
 			value, err = promptForEnvVar(key)
 			if err != nil {
 				return nil, err
 			}
-			// Save the variable to the .env file
 			if err := envManager.SetVar(key, value); err != nil {
 				return nil, fmt.Errorf("error saving key %s to .env: %v", key, err)
 			}
@@ -76,14 +83,14 @@ func pullStorage(env map[string]string) error {
 		return fmt.Errorf("error getting date: %v", err)
 	}
 	storageFile := fmt.Sprintf("storage_%s.tar.gz", strings.TrimSpace(string(dateOutput)))
-	remoteCmd := fmt.Sprintf("cd %s && tar -cvzf /tmp/%s -C storage/app/public .", env["REMOTE_PROJECT_DIR"], storageFile)
+	remoteCmd := fmt.Sprintf("cd %s && tar -cvzf /tmp/%s -C storage/app/public .", env["PULL_PROJECT_DIR"], storageFile)
 
-	if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_HOST"], remoteCmd); err != nil {
+	if err := utils.RunRemoteCommand(env["PULL_SSH_USER"], env["PULL_HOST"], remoteCmd); err != nil {
 		return fmt.Errorf("error compressing storage folder on remote: %v", err)
 	}
 
 	localPath := fmt.Sprintf("/tmp/%s", storageFile)
-	remotePath := fmt.Sprintf("%s@%s:/tmp/%s", env["REMOTE_SSH_USER"], env["REMOTE_HOST"], storageFile)
+	remotePath := fmt.Sprintf("%s@%s:/tmp/%s", env["PULL_SSH_USER"], env["PULL_HOST"], storageFile)
 
 	if err := utils.RunCommand("scp", remotePath, localPath); err != nil {
 		return fmt.Errorf("error downloading storage file: %v", err)
@@ -93,7 +100,7 @@ func pullStorage(env map[string]string) error {
 		return fmt.Errorf("error extracting storage file locally: %v", err)
 	}
 
-	if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_HOST"], fmt.Sprintf("rm /tmp/%s", storageFile)); err != nil {
+	if err := utils.RunRemoteCommand(env["PULL_SSH_USER"], env["PULL_HOST"], fmt.Sprintf("rm /tmp/%s", storageFile)); err != nil {
 		return fmt.Errorf("error deleting remote storage file: %v", err)
 	}
 
@@ -108,7 +115,7 @@ func pullStorage(env map[string]string) error {
 func pullDatabase(env map[string]string) error {
 	fmt.Println("Pulling database...")
 
-	remoteEnvPath := fmt.Sprintf("%s/.env", env["REMOTE_PROJECT_DIR"])
+	remoteEnvPath := fmt.Sprintf("%s/.env", env["PULL_PROJECT_DIR"])
 	fmt.Println("Remote env path:", remoteEnvPath)
 	remoteDBName, err := getRemoteEnvValue(env, remoteEnvPath, "DB_DATABASE")
 	if err != nil {
@@ -131,12 +138,12 @@ func pullDatabase(env map[string]string) error {
 
 	fmt.Println("Remote command to create dump:", remoteCmd)
 
-	if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_HOST"], remoteCmd); err != nil {
+	if err := utils.RunRemoteCommand(env["PULL_SSH_USER"], env["PULL_HOST"], remoteCmd); err != nil {
 		return fmt.Errorf("error creating database dump on remote: %v", err)
 	}
 
 	localPath := fmt.Sprintf("%s-dump.sql", remoteDBName)
-	remotePath := fmt.Sprintf("%s@%s:%s", env["REMOTE_SSH_USER"], env["REMOTE_HOST"], dumpFile)
+	remotePath := fmt.Sprintf("%s@%s:%s", env["PULL_SSH_USER"], env["PULL_HOST"], dumpFile)
 
 	if err := utils.RunCommand("scp", remotePath, localPath); err != nil {
 		return fmt.Errorf("error downloading database dump: %v", err)
@@ -144,7 +151,7 @@ func pullDatabase(env map[string]string) error {
 	// fmt.Println("Local path for database dump:", localPathV)
 	// fmt.Println("Remote path for database dump:", remotePath)
 
-	localEnv, err := loadLocalEnv()
+	localEnv, err := loadLocalEnv("pull")
 	if err != nil {
 		return err
 	}
@@ -176,7 +183,7 @@ func pullDatabase(env map[string]string) error {
 		return fmt.Errorf("error importing database dump locally: %v", err)
 	}
 
-	if err := utils.RunRemoteCommand(env["REMOTE_SSH_USER"], env["REMOTE_HOST"], fmt.Sprintf("rm %s", dumpFile)); err != nil {
+	if err := utils.RunRemoteCommand(env["PULL_SSH_USER"], env["PULL_HOST"], fmt.Sprintf("rm %s", dumpFile)); err != nil {
 		return fmt.Errorf("error deleting remote database dump: %v", err)
 	}
 
@@ -221,7 +228,7 @@ func runMySQLCommand(user, password, dbName, query string) error {
 }
 
 func getRemoteEnvValue(env map[string]string, remoteEnvPath, key string) (string, error) {
-	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", env["REMOTE_SSH_USER"], env["REMOTE_HOST"]),
+	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", env["PULL_SSH_USER"], env["PULL_HOST"]),
 		fmt.Sprintf("grep %s %s | cut -d '=' -f 2", key, remoteEnvPath))
 	output, err := cmd.Output()
 	if err != nil {
