@@ -137,9 +137,9 @@ func main() {
 				Action:  commands.CheckProject,
 			},
 			{
-				Name:    "pull",
-				Usage:   "Pull storage or database from a remote server",
-				Action:  commands.Pull,
+				Name:   "pull",
+				Usage:  "Pull storage or database from a remote server",
+				Action: commands.Pull,
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:  "storage",
@@ -148,6 +148,21 @@ func main() {
 					&cli.BoolFlag{
 						Name:  "database",
 						Usage: "Pull the database",
+					},
+				},
+			},
+			{
+				Name:   "push",
+				Usage:  "Push storage or database to a remote server",
+				Action: commands.Push,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "storage",
+						Usage: "Push the storage folder",
+					},
+					&cli.BoolFlag{
+						Name:  "database",
+						Usage: "Push the database",
 					},
 				},
 			},
