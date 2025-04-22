@@ -17,7 +17,7 @@ import (
 )
 
 func Push(cliContext *cli.Context) error {
-	localEnv, err := loadLocalEnv("push")
+	localEnv, err := utils.EnsureRequiredEnvVars("push")
 	if err != nil {
 		return err
 	}

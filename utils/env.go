@@ -77,3 +77,47 @@ func (e *EnvManager) SetVar(key, value string) error {
 	content := strings.Join(lines, "\n")
 	return os.WriteFile(e.Path, []byte(content), 0644)
 }
+
+func EnsureRequiredEnvVars(context string) (map[string]string, error) {
+	var requiredKeys []string
+
+	if context == "push" {
+		requiredKeys = []string{"PUSH_SSH_USER", "PUSH_HOST", "PUSH_PROJECT_DIR"}
+	} else if context == "pull" {
+		requiredKeys = []string{"PULL_SSH_USER", "PULL_HOST", "PULL_PROJECT_DIR"}
+	} else {
+		return nil, fmt.Errorf("invalid context: %s", context)
+	}
+
+	envManager := NewEnvManager(".env")
+	envVars := make(map[string]string)
+
+	for _, key := range requiredKeys {
+		value, found, err := envManager.GetVar(key)
+		if err != nil {
+			return nil, fmt.Errorf("error reading key %s from .env: %v", key, err)
+		}
+		if !found {
+			value, err = promptForEnvVar(key)
+			if err != nil {
+				return nil, err
+			}
+			if err := envManager.SetVar(key, value); err != nil {
+				return nil, fmt.Errorf("error saving key %s to .env: %v", key, err)
+			}
+		}
+		envVars[key] = value
+	}
+
+	return envVars, nil
+}
+
+func promptForEnvVar(key string) (string, error) {
+	fmt.Printf("The required environment variable '%s' is missing. Please enter its value: ", key)
+	var value string
+	_, err := fmt.Scanln(&value)
+	if err != nil {
+		return "", fmt.Errorf("error reading input for %s: %v", key, err)
+	}
+	return value, nil
+}

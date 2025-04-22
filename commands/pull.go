@@ -13,7 +13,7 @@ import (
 )
 
 func Pull(cliContext *cli.Context) error {
-	localEnv, err := loadLocalEnv("pull")
+	localEnv, err := utils.EnsureRequiredEnvVars("pull")
 	if err != nil {
 		return err
 	}
@@ -39,40 +39,6 @@ func Pull(cliContext *cli.Context) error {
 	}
 
 	return nil
-}
-
-func loadLocalEnv(context string) (map[string]string, error) {
-	var requiredKeys []string
-
-	if context == "push" {
-		requiredKeys = []string{"PUSH_SSH_USER", "PUSH_HOST", "PUSH_PROJECT_DIR"}
-	} else if context == "pull" {
-		requiredKeys = []string{"PULL_SSH_USER", "PULL_HOST", "PULL_PROJECT_DIR"}
-	} else {
-		return nil, fmt.Errorf("invalid context: %s", context)
-	}
-
-	envManager := utils.NewEnvManager(".env")
-	envVars := make(map[string]string)
-
-	for _, key := range requiredKeys {
-		value, found, err := envManager.GetVar(key)
-		if err != nil {
-			return nil, fmt.Errorf("error reading key %s from .env: %v", key, err)
-		}
-		if !found {
-			value, err = promptForEnvVar(key)
-			if err != nil {
-				return nil, err
-			}
-			if err := envManager.SetVar(key, value); err != nil {
-				return nil, fmt.Errorf("error saving key %s to .env: %v", key, err)
-			}
-		}
-		envVars[key] = value
-	}
-
-	return envVars, nil
 }
 
 func pullStorage(env map[string]string) error {
@@ -151,7 +117,7 @@ func pullDatabase(env map[string]string) error {
 	// fmt.Println("Local path for database dump:", localPathV)
 	// fmt.Println("Remote path for database dump:", remotePath)
 
-	localEnv, err := loadLocalEnv("pull")
+	localEnv, err := utils.EnsureRequiredEnvVars("pull")
 	if err != nil {
 		return err
 	}
@@ -169,9 +135,6 @@ func pullDatabase(env map[string]string) error {
 	localDBUser := cfg.DBUser         // Benutzername aus der Konfiguration
 	localDBPassword := cfg.DbPassword // Passwort aus der Konfiguration
 
-	fmt.Println("Local DB Name:", localDBName)
-	fmt.Println("Local DB User:", localDBUser)
-	fmt.Println("Local DB Password:", localDBPassword)
 	fmt.Println("Importing database dump locally...")
 
 	// Check if the local database exists
@@ -250,14 +213,4 @@ func getRemoteEnvValue(env map[string]string, remoteEnvPath, key, context string
 	}
 	output = []byte(strings.Trim(strings.TrimSpace(string(output)), `"'`))
 	return strings.TrimSpace(string(output)), nil
-}
-
-func promptForEnvVar(key string) (string, error) {
-	fmt.Printf("The required environment variable '%s' is missing. Please enter its value: ", key)
-	var value string
-	_, err := fmt.Scanln(&value)
-	if err != nil {
-		return "", fmt.Errorf("error reading input for %s: %v", key, err)
-	}
-	return value, nil
 }
