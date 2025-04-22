@@ -169,19 +169,28 @@ func compressFolder(sourceDir, outputFile string) error {
 
 func pushDatabase(env map[string]string) error {
 	fmt.Println("Pushing database...")
+	envManager := utils.NewEnvManager(".env")
+	localDBName, _, _ := envManager.GetVar("DB_DATABASE")
+	localDBUser, _, _ := envManager.GetVar("DB_USERNAME")
+	localDBPassword, _, _ := envManager.GetVar("DB_PASSWORD")
 
-	localDBName := env["DB_DATABASE"]
-	localDBUser := env["DB_USERNAME"]
-	localDBPassword := env["DB_PASSWORD"]
+	log.Printf("Local DB Name: %s", localDBName)
+	log.Printf("Local DB User: %s", localDBUser)
+	log.Printf("Local DB Password: %s", localDBPassword)
 
-	if localDBName == "" || localDBUser == "" || localDBPassword == "" {
+	if localDBName == "" || localDBUser == "" {
 		return fmt.Errorf("local database credentials are missing in .env file")
 	}
 
 	dumpFile := fmt.Sprintf("%s-dump.sql", localDBName)
 
 	// Create a database dump locally
-	dumpCmd := fmt.Sprintf("mysqldump -u %s -p%s %s > %s", localDBUser, localDBPassword, localDBName, dumpFile)
+	var dumpCmd string
+	if localDBPassword != "" {
+		dumpCmd = fmt.Sprintf("mysqldump -u %s -p%s %s > %s", localDBUser, localDBPassword, localDBName, dumpFile)
+	} else {
+		dumpCmd = fmt.Sprintf("mysqldump -u %s %s > %s", localDBUser, localDBName, dumpFile)
+	}
 	if err := utils.RunCommand("bash", "-c", dumpCmd); err != nil {
 		return fmt.Errorf("error creating local database dump: %v", err)
 	}
