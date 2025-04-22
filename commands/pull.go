@@ -52,7 +52,15 @@ func loadLocalEnv() (map[string]string, error) {
 			return nil, fmt.Errorf("error reading key %s from .env: %v", key, err)
 		}
 		if !found {
-			return nil, fmt.Errorf("required key %s not found in .env", key)
+			// Prompt the user for the missing variable
+			value, err = promptForEnvVar(key)
+			if err != nil {
+				return nil, err
+			}
+			// Save the variable to the .env file
+			if err := envManager.SetVar(key, value); err != nil {
+				return nil, fmt.Errorf("error saving key %s to .env: %v", key, err)
+			}
 		}
 		envVars[key] = value
 	}
@@ -221,4 +229,14 @@ func getRemoteEnvValue(env map[string]string, remoteEnvPath, key string) (string
 	}
 	output = []byte(strings.Trim(strings.TrimSpace(string(output)), `"'`))
 	return strings.TrimSpace(string(output)), nil
+}
+
+func promptForEnvVar(key string) (string, error) {
+	fmt.Printf("The required environment variable '%s' is missing. Please enter its value: ", key)
+	var value string
+	_, err := fmt.Scanln(&value)
+	if err != nil {
+		return "", fmt.Errorf("error reading input for %s: %v", key, err)
+	}
+	return value, nil
 }
