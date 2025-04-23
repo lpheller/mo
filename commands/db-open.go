@@ -4,63 +4,39 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
+
+	"mo/utils"
 
 	"github.com/urfave/cli/v2"
 )
 
 func OpenDatabase(cliContext *cli.Context) error {
-	_, err := os.Stat(".env")
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
+	envManager := utils.NewEnvManager(".env")
 
-	envExists := !os.IsNotExist(err)
-
-	if !envExists {
+	if _, err := os.Stat(envManager.Path); os.IsNotExist(err) {
 		return fmt.Errorf(".env file not found")
 	}
 
-	envContent, err := os.ReadFile(".env")
+	dbConnection, found, err := envManager.GetVar("DB_CONNECTION")
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading DB_CONNECTION: %v", err)
+	}
+	if !found {
+		return fmt.Errorf("DB_CONNECTION not found in .env")
 	}
 
-	if strings.Contains(string(envContent), "DB_CONNECTION=sqlite") {
+	if dbConnection == "sqlite" {
 		if _, err := os.Stat("database/database.sqlite"); !os.IsNotExist(err) {
 			return exec.Command("open", "database/database.sqlite").Run()
 		}
+		return fmt.Errorf("SQLite database file not found")
 	}
 
-	var dbConnection, dbUsername, dbPassword, dbHost, dbPort, dbDatabase string
-
-	lines := strings.Split(string(envContent), "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
-			continue
-		}
-
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) == 2 {
-			key := strings.TrimSpace(parts[0])
-			value := strings.TrimSpace(parts[1])
-
-			switch key {
-			case "DB_CONNECTION":
-				dbConnection = value
-			case "DB_USERNAME":
-				dbUsername = value
-			case "DB_PASSWORD":
-				dbPassword = value
-			case "DB_HOST":
-				dbHost = value
-			case "DB_PORT":
-				dbPort = value
-			case "DB_DATABASE":
-				dbDatabase = value
-			}
-		}
-	}
+	dbUsername, _, _ := envManager.GetVar("DB_USERNAME")
+	dbPassword, _, _ := envManager.GetVar("DB_PASSWORD")
+	dbHost, _, _ := envManager.GetVar("DB_HOST")
+	dbPort, _, _ := envManager.GetVar("DB_PORT")
+	dbDatabase, _, _ := envManager.GetVar("DB_DATABASE")
 
 	connStr := fmt.Sprintf("%s://%s:%s@%s:%s/%s", dbConnection, dbUsername, dbPassword, dbHost, dbPort, dbDatabase)
 

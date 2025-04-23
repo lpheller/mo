@@ -84,13 +84,13 @@ func pullDatabase(env map[string]string) error {
 	if err != nil {
 		return fmt.Errorf("error fetching remote DB name: %v", err)
 	}
-	fmt.Println("Remote DB Name: %s\n", remoteDBName)
+	fmt.Printf("Remote DB Name: %s\n", remoteDBName)
 
 	remoteDBUser, err := getRemoteEnvValue(env, remoteEnvPath, "DB_USERNAME", "pull")
 	if err != nil {
 		return err
 	}
-	fmt.Println("Remote DB User: %s\n", remoteDBUser)
+	fmt.Printf("Remote DB User: %s\n", remoteDBUser)
 	remoteDBPassword, err := getRemoteEnvValue(env, remoteEnvPath, "DB_PASSWORD", "pull")
 	if err != nil {
 		return err
