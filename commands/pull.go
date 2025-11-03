@@ -127,7 +127,7 @@ func pullDatabase(env map[string]string) error {
 		localDBName = remoteDBName
 	}
 	localDBUser := cfg.DBUser
-	localDBPassword := cfg.DbPassword
+	localDBPassword := cfg.DBPassword
 
 	fmt.Println("Importing database dump locally...")
 

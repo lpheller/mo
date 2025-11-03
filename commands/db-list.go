@@ -18,7 +18,7 @@ func ListDatabases(c *cli.Context) error {
 		return err
 	}
 
-	dsn := fmt.Sprintf("%s@tcp(%s:%s)/", cfg.DBUser, cfg.DbHost, cfg.DbPort)
+	dsn := fmt.Sprintf("%s@tcp(%s:%s)/", cfg.DBUser, cfg.DBHost, cfg.DBPort)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {

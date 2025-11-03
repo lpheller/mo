@@ -16,10 +16,10 @@ func TestDefaultConfig(t *testing.T) {
 		expected string
 	}{
 		{"DBUser", cfg.DBUser, "root"},
-		{"DbHost", cfg.DbHost, "127.0.0.1"},
-		{"DbPort", cfg.DbPort, "3306"},
+		{"DBHost", cfg.DBHost, "127.0.0.1"},
+		{"DBPort", cfg.DBPort, "3306"},
 		{"Editor", cfg.Editor, "vscode"},
-		{"DbPassword", cfg.DbPassword, ""},
+		{"DBPassword", cfg.DBPassword, ""},
 		{"MailtrapUsername", cfg.MailtrapUsername, ""},
 		{"MailtrapPassword", cfg.MailtrapPassword, ""},
 	}
@@ -74,9 +74,9 @@ func TestLoadConfig_ExistingFile(t *testing.T) {
 
 	testConfig := &Config{
 		DBUser:           "testuser",
-		DbPassword:       "testpass",
-		DbHost:           "testhost",
-		DbPort:           "5432",
+		DBPassword:       "testpass",
+		DBHost:           "testhost",
+		DBPort:           "5432",
 		Editor:           "vim",
 		MailtrapUsername: "mailtrap@test.com",
 		MailtrapPassword: "mailtrappass",
@@ -106,9 +106,9 @@ func TestLoadConfig_ExistingFile(t *testing.T) {
 		expected string
 	}{
 		{"DBUser", cfg.DBUser, "testuser"},
-		{"DbPassword", cfg.DbPassword, "testpass"},
-		{"DbHost", cfg.DbHost, "testhost"},
-		{"DbPort", cfg.DbPort, "5432"},
+		{"DBPassword", cfg.DBPassword, "testpass"},
+		{"DBHost", cfg.DBHost, "testhost"},
+		{"DBPort", cfg.DBPort, "5432"},
 		{"Editor", cfg.Editor, "vim"},
 		{"MailtrapUsername", cfg.MailtrapUsername, "mailtrap@test.com"},
 		{"MailtrapPassword", cfg.MailtrapPassword, "mailtrappass"},

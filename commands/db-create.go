@@ -21,7 +21,7 @@ func CreateDatabase(cliContext *cli.Context) error {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
-	dsn := fmt.Sprintf("%s@tcp(%s:%s)/", cfg.DBUser, cfg.DbHost, cfg.DbPort)
+	dsn := fmt.Sprintf("%s@tcp(%s:%s)/", cfg.DBUser, cfg.DBHost, cfg.DBPort)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {

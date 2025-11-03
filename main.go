@@ -11,9 +11,7 @@ import (
 )
 
 func main() {
-	_, err := config.LoadConfig()
-
-	if err != nil {
+	if _, err := config.LoadConfig(); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
@@ -88,14 +86,12 @@ func main() {
 				},
 			},
 			{
-				Name: "env:sqlite",
-				// Aliases: []string{"envsqlite"},
+				Name:   "env:sqlite",
 				Usage:  "Set the DB_CONNECTION to sqlite",
 				Action: commands.EnvSqlite,
 			},
 			{
-				Name: "env:mailtrap",
-				// Aliases: []string{"envmailtrap"},
+				Name:   "env:mailtrap",
 				Usage:  "Set the mail driver to mailtrap",
 				Action: commands.EnvMailtrap,
 			},
@@ -112,7 +108,7 @@ func main() {
 			},
 			{
 				Name:        "env:sync",
-				Aliases:     []string{"snyc:env"},
+				Aliases:     []string{"sync:env"},
 				Usage:       "Sync the .env file with .env.example",
 				Description: `Sync the .env file with .env.example`,
 				Action:      commands.SyncEnv,

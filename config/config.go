@@ -7,22 +7,22 @@ import (
 )
 
 type Config struct {
-	DBUser           string `json:"DB_USERNAME"`
-	DbPassword       string `json:"DB_PASSWORD"`
-	DbHost           string `json:"DB_HOST"`
-	DbPort           string `json:"DB_PORT"`
-	Editor           string `json:"EDITOR"`
-	MailtrapUsername string `json:"MAILTRAP_USERNAME"`
-	MailtrapPassword string `json:"MAILTRAP_PASSWORD"`
-	ConfigPaths      map[string]string
+	DBUser           string            `json:"db_user"`
+	DBPassword       string            `json:"db_password"`
+	DBHost           string            `json:"db_host"`
+	DBPort           string            `json:"db_port"`
+	Editor           string            `json:"editor"`
+	MailtrapUsername string            `json:"mailtrap_username"`
+	MailtrapPassword string            `json:"mailtrap_password"`
+	ConfigPaths      map[string]string `json:"config_paths"`
 }
 
 func DefaultConfig() *Config {
 	return &Config{
 		DBUser:           "root",
-		DbPassword:       "",
-		DbHost:           "127.0.0.1",
-		DbPort:           "3306",
+		DBPassword:       "",
+		DBHost:           "127.0.0.1",
+		DBPort:           "3306",
 		Editor:           "vscode",
 		MailtrapUsername: "",
 		MailtrapPassword: "",
@@ -30,8 +30,12 @@ func DefaultConfig() *Config {
 	}
 }
 
+// configPathFunc is a variable that holds the function to get the config path
+// This allows for easier testing by allowing the function to be overridden
+var configPathFunc = defaultConfigPath
+
 func LoadConfig() (*Config, error) {
-	configPath, err := ConfigPath()
+	configPath, err := configPathFunc()
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +63,10 @@ func LoadConfig() (*Config, error) {
 }
 
 func ConfigPath() (string, error) {
+	return configPathFunc()
+}
+
+func defaultConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
