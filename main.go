@@ -162,6 +162,48 @@ func main() {
 					},
 				},
 			},
+			{
+				Name:  "l",
+				Usage: "Laravel specific commands",
+				Subcommands: []*cli.Command{
+					{
+						Name:    "clear",
+						Aliases: []string{"c"},
+						Usage:   "Clear all Laravel caches (cache, route, config, view)",
+						Action:  commands.LaravelClear,
+					},
+					{
+						Name:    "fresh",
+						Aliases: []string{"f"},
+						Usage:   "Run migrate:fresh with seeding",
+						Action:  commands.LaravelFresh,
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:  "no-seed",
+								Usage: "Skip database seeding",
+							},
+						},
+					},
+				},
+			},
+			{
+				Name:    "l:clear",
+				Aliases: []string{"lc"},
+				Usage:   "Clear all Laravel caches",
+				Action:  commands.LaravelClear,
+			},
+			{
+				Name:    "l:fresh",
+				Aliases: []string{"lf"},
+				Usage:   "Run migrate:fresh with seeding",
+				Action:  commands.LaravelFresh,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "no-seed",
+						Usage: "Skip database seeding",
+					},
+				},
+			},
 		},
 	}
 

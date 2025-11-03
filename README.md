@@ -33,6 +33,18 @@ mo db open                 # Open database client
 
 Aliases: `db:create`, `createdb`, etc. - whatever feels natural.
 
+### Laravel commands
+
+```bash
+mo l:clear                 # Clear all caches (or: mo lc)
+mo l:fresh                 # Migrate fresh with seed (or: mo lf)
+mo l:fresh --no-seed       # Without seeding
+
+# Or with subcommands:
+mo l clear
+mo l fresh
+```
+
 ### Environment management
 
 Quick switches for common Laravel .env configurations:
