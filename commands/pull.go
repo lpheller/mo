@@ -149,9 +149,12 @@ func pullDatabase(env map[string]string) error {
 
 	fmt.Println("Database successfully pulled!")
 
-	if _, exists := localEnv["DB_DATABASE"]; !exists {
+	envManager := utils.NewEnvManager(".env")
+	if _, exists, err := envManager.GetVar("DB_DATABASE"); !exists {
+		if err != nil {
+			return fmt.Errorf("error checking DB_DATABASE in .env: %v", err)
+		}
 		fmt.Println("Adding database credentials to local .env file...")
-		envManager := utils.NewEnvManager(".env")
 
 		if err := envManager.SetVar("DB_DATABASE", localDBName); err != nil {
 			return fmt.Errorf("error adding DB_DATABASE to .env: %v", err)
@@ -196,7 +199,7 @@ func getRemoteEnvValue(env map[string]string, remoteEnvPath, key, context string
 	}
 
 	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", env[sshUserKey], env[sshHostKey]),
-		fmt.Sprintf("grep %s %s | cut -d '=' -f 2", key, remoteEnvPath))
+		fmt.Sprintf("grep -w %s %s | cut -d '=' -f 2", key, remoteEnvPath))
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("error fetching remote env value for %s: %v", key, err)

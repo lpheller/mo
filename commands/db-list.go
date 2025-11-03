@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"mo/config" // if config is in a separate package
+	"mo/config"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/urfave/cli/v2"
@@ -12,6 +12,11 @@ import (
 
 func ListDatabases(c *cli.Context) error {
 	cfg, err := config.LoadConfig()
+
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+		return err
+	}
 
 	dsn := fmt.Sprintf("%s@tcp(%s:%s)/", cfg.DBUser, cfg.DbHost, cfg.DbPort)
 
