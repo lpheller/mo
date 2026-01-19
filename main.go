@@ -81,6 +81,13 @@ func main() {
 		},
 	}
 
+	configListCmd := &cli.Command{
+		Name:    "list",
+		Aliases: []string{"l"},
+		Usage:   "List all available config keys",
+		Action:  commands.ListConfigKeys,
+	}
+
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
@@ -142,10 +149,11 @@ func main() {
 				Action:  commands.EditConfig,
 			},
 			{
-				Name:    "config",
-				Aliases: []string{"cfg", "qc"},
-				Usage:   "Quickly open configuration files",
-				Action:  commands.QuickConfig,
+				Name:        "config",
+				Aliases:     []string{"cfg", "qc"},
+				Usage:       "Quickly open configuration files",
+				Action:      commands.QuickConfig,
+				Subcommands: []*cli.Command{configListCmd},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "editor",
@@ -153,6 +161,11 @@ func main() {
 						Aliases: []string{"e"},
 					},
 				},
+			},
+			{
+				Name:   "config:list",
+				Usage:  configListCmd.Usage,
+				Action: configListCmd.Action,
 			},
 			{
 				Name:    "setup",
