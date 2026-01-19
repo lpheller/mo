@@ -15,103 +15,131 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	// Define commands once to avoid duplication
+	dbCreateCmd := &cli.Command{
+		Name:    "create",
+		Aliases: []string{"c"},
+		Usage:   "Create a new database",
+		Action:  commands.CreateDatabase,
+	}
+
+	dbListCmd := &cli.Command{
+		Name:    "list",
+		Aliases: []string{"l"},
+		Usage:   "List all databases",
+		Action:  commands.ListDatabases,
+	}
+
+	dbOpenCmd := &cli.Command{
+		Name:    "open",
+		Aliases: []string{"o"},
+		Usage:   "Open the database in the default editor",
+		Action:  commands.OpenDatabase,
+	}
+
+	envSqliteCmd := &cli.Command{
+		Name:   "sqlite",
+		Usage:  "Set the DB_CONNECTION to sqlite",
+		Action: commands.EnvSqlite,
+	}
+
+	envMailtrapCmd := &cli.Command{
+		Name:   "mailtrap",
+		Usage:  "Set the mail driver to mailtrap",
+		Action: commands.EnvMailtrap,
+	}
+
+	envMaildevCmd := &cli.Command{
+		Name:   "maildev",
+		Usage:  "Set the mail driver to mail-dev",
+		Action: commands.EnvMailDev,
+	}
+
+	envSyncCmd := &cli.Command{
+		Name:   "sync",
+		Usage:  "Sync the .env file with .env.example",
+		Action: commands.SyncEnv,
+	}
+
+	laravelClearCmd := &cli.Command{
+		Name:    "clear",
+		Aliases: []string{"c"},
+		Usage:   "Clear all Laravel caches (cache, route, config, view)",
+		Action:  commands.LaravelClear,
+	}
+
+	laravelFreshCmd := &cli.Command{
+		Name:    "fresh",
+		Aliases: []string{"f"},
+		Usage:   "Run migrate:fresh with seeding",
+		Action:  commands.LaravelFresh,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "no-seed",
+				Usage: "Skip database seeding",
+			},
+		},
+	}
+
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
-				Name:  "db",
-				Usage: "Database management",
-				Subcommands: []*cli.Command{
-					{
-						Name:    "create",
-						Aliases: []string{"c"},
-						Usage:   "Create a new database",
-						Action:  commands.CreateDatabase,
-					},
-					{
-						Name:    "list",
-						Aliases: []string{"l"},
-						Usage:   "List all databases",
-						Action:  commands.ListDatabases,
-					},
-					{
-						Name:    "open",
-						Aliases: []string{"o"},
-						Usage:   "Open the database in the default editor",
-						Action:  commands.OpenDatabase,
-					},
-				},
+				Name:        "db",
+				Usage:       "Database management",
+				Subcommands: []*cli.Command{dbCreateCmd, dbListCmd, dbOpenCmd},
 			},
+			// Top-level commands with colon notation (reuse command definitions)
 			{
-				Name:    "db:open",
-				Aliases: []string{"opendb"},
-				Usage:   "Open the database in the default editor",
-				Action:  commands.OpenDatabase,
+				Name:    "db:create",
+				Aliases: []string{"createdb"},
+				Usage:   dbCreateCmd.Usage,
+				Action:  dbCreateCmd.Action,
 			},
 			{
 				Name:    "db:list",
 				Aliases: []string{"listdb"},
-				Usage:   "List all databases",
-				Action:  commands.ListDatabases,
+				Usage:   dbListCmd.Usage,
+				Action:  dbListCmd.Action,
 			},
 			{
-				Name:    "db:create",
-				Aliases: []string{"createdb"},
-				Usage:   "Create a new database",
-				Action:  commands.CreateDatabase,
+				Name:    "db:open",
+				Aliases: []string{"opendb"},
+				Usage:   dbOpenCmd.Usage,
+				Action:  dbOpenCmd.Action,
 			},
 			{
-				Name:  "env",
-				Usage: "Environment management",
-				Subcommands: []*cli.Command{
-					{
-						Name:   "sqlite",
-						Usage:  "Set the DB_CONNECTION to sqlite",
-						Action: commands.EnvSqlite,
-					},
-					{
-						Name:   "mailtrap",
-						Usage:  "Set the mail driver to mailtrap",
-						Action: commands.EnvMailtrap,
-					},
-					{
-						Name:   "maildev",
-						Usage:  "Set the mail driver to mail-dev",
-						Action: commands.EnvMailDev,
-					},
-					{
-						Name:   "sync",
-						Usage:  "Sync the .env file with .env.example",
-						Action: commands.SyncEnv,
-					},
-				},
+				Name:        "env",
+				Usage:       "Environment management",
+				Subcommands: []*cli.Command{envSqliteCmd, envMailtrapCmd, envMaildevCmd, envSyncCmd},
 			},
+			// Top-level commands with colon notation (reuse command definitions)
 			{
 				Name:   "env:sqlite",
-				Usage:  "Set the DB_CONNECTION to sqlite",
-				Action: commands.EnvSqlite,
+				Usage:  envSqliteCmd.Usage,
+				Action: envSqliteCmd.Action,
 			},
 			{
 				Name:   "env:mailtrap",
-				Usage:  "Set the mail driver to mailtrap",
-				Action: commands.EnvMailtrap,
+				Usage:  envMailtrapCmd.Usage,
+				Action: envMailtrapCmd.Action,
 			},
 			{
 				Name:   "env:maildev",
-				Usage:  "Set the mail driver to mail-dev",
-				Action: commands.EnvMailDev,
+				Usage:  envMaildevCmd.Usage,
+				Action: envMaildevCmd.Action,
+			},
+			{
+				Name:        "env:sync",
+				Aliases:     []string{"sync:env"},
+				Usage:       envSyncCmd.Usage,
+				Description: "Sync the .env file with .env.example",
+				Action:      envSyncCmd.Action,
 			},
 			{
 				Name:    "config:edit",
 				Aliases: []string{"edit:config"},
 				Usage:   "Edit the Mortimer config file",
 				Action:  commands.EditConfig,
-			},
-			{
-				Name:        "env:sync",
-				Aliases:     []string{"sync:env"},
-				Usage:       "Sync the .env file with .env.example",
-				Description: `Sync the .env file with .env.example`,
-				Action:      commands.SyncEnv,
 			},
 			{
 				Name:    "config",
@@ -163,46 +191,23 @@ func main() {
 				},
 			},
 			{
-				Name:  "l",
-				Usage: "Laravel specific commands",
-				Subcommands: []*cli.Command{
-					{
-						Name:    "clear",
-						Aliases: []string{"c"},
-						Usage:   "Clear all Laravel caches (cache, route, config, view)",
-						Action:  commands.LaravelClear,
-					},
-					{
-						Name:    "fresh",
-						Aliases: []string{"f"},
-						Usage:   "Run migrate:fresh with seeding",
-						Action:  commands.LaravelFresh,
-						Flags: []cli.Flag{
-							&cli.BoolFlag{
-								Name:  "no-seed",
-								Usage: "Skip database seeding",
-							},
-						},
-					},
-				},
+				Name:        "l",
+				Usage:       "Laravel specific commands",
+				Subcommands: []*cli.Command{laravelClearCmd, laravelFreshCmd},
 			},
+			// Top-level commands with colon notation (reuse command definitions)
 			{
 				Name:    "l:clear",
 				Aliases: []string{"lc"},
-				Usage:   "Clear all Laravel caches",
-				Action:  commands.LaravelClear,
+				Usage:   laravelClearCmd.Usage,
+				Action:  laravelClearCmd.Action,
 			},
 			{
 				Name:    "l:fresh",
 				Aliases: []string{"lf"},
-				Usage:   "Run migrate:fresh with seeding",
-				Action:  commands.LaravelFresh,
-				Flags: []cli.Flag{
-					&cli.BoolFlag{
-						Name:  "no-seed",
-						Usage: "Skip database seeding",
-					},
-				},
+				Usage:   laravelFreshCmd.Usage,
+				Action:  laravelFreshCmd.Action,
+				Flags:   laravelFreshCmd.Flags,
 			},
 		},
 	}
