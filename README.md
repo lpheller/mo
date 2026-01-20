@@ -68,6 +68,26 @@ mo config -e vim myapp     # Use vim instead of default editor
 
 First time? Run `mo config:edit` to set up your config paths.
 
+### SSH management
+
+Manage SSH connections and connect to servers:
+
+```bash
+mo ssh forge@example.com        # Connect to server (adds to config if new)
+mo ssh -c                       # Interactive host selection with fzf
+mo ssh                          # Same as above
+mo ssh:add myserver user@host   # Manually add SSH entry
+mo ssh:list                     # List all SSH entries
+mo ssh:connect                  # Interactive selection with fzf
+```
+
+**Smart connection**: When you use `mo ssh <connection>`, it will:
+- Check if the connection already exists in `~/.ssh/config`
+- If not found, prompt you for a name and save it automatically
+- Connect immediately after adding
+
+All entries are stored in your `~/.ssh/config` file and can be used with regular `ssh` commands afterward.
+
 ### Project setup
 
 ```bash

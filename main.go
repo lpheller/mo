@@ -88,6 +88,40 @@ func main() {
 		Action:  commands.ListConfigKeys,
 	}
 
+	sshAddCmd := &cli.Command{
+		Name:    "add",
+		Aliases: []string{"a"},
+		Usage:   "Add a new SSH entry",
+		Action:  commands.AddSSHEntry,
+	}
+
+	sshListCmd := &cli.Command{
+		Name:    "list",
+		Aliases: []string{"l"},
+		Usage:   "List all SSH entries",
+		Action:  commands.ListSSHEntries,
+	}
+
+	sshConnectCmd := &cli.Command{
+		Name:    "connect",
+		Aliases: []string{"c"},
+		Usage:   "Connect to an SSH host interactively",
+		Action:  commands.ConnectSSH,
+	}
+
+	sshCmd := &cli.Command{
+		Name:   "ssh",
+		Usage:  "SSH connection (use -c to connect interactively)",
+		Action: commands.SSHCommand,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "connect",
+				Aliases: []string{"c"},
+				Usage:   "Connect to an SSH host interactively using fzf",
+			},
+		},
+	}
+
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
@@ -222,6 +256,27 @@ func main() {
 				Action:  laravelFreshCmd.Action,
 				Flags:   laravelFreshCmd.Flags,
 			},
+			// Top-level commands with colon notation (reuse command definitions)
+			{
+				Name:    "ssh:add",
+				Aliases: []string{"ssh-add"},
+				Usage:   sshAddCmd.Usage,
+				Action:  sshAddCmd.Action,
+			},
+			{
+				Name:    "ssh:list",
+				Aliases: []string{"ssh-l", "ssh-list"},
+				Usage:   sshListCmd.Usage,
+				Action:  sshListCmd.Action,
+			},
+			{
+				Name:    "ssh:connect",
+				Aliases: []string{"ssh-c"},
+				Usage:   sshConnectCmd.Usage,
+				Action:  sshConnectCmd.Action,
+			},
+			// Standalone ssh command with -c flag
+			sshCmd,
 		},
 	}
 
